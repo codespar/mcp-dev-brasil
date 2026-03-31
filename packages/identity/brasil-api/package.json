@@ -4,7 +4,9 @@
   "description": "MCP server for BrasilAPI — CEP, CNPJ, banks, FIPE, holidays, weather",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": { "mcp-brasil-api": "./dist/index.js" },
+  "bin": {
+    "mcp-brasil-api": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -13,8 +15,16 @@
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "typescript": "^5.8.0"
   },
   "license": "MIT",
-  "keywords": ["mcp", "brasil-api", "cep", "cnpj", "fipe", "brazil"]
+  "keywords": [
+    "mcp",
+    "brasil-api",
+    "cep",
+    "cnpj",
+    "fipe",
+    "brazil"
+  ]
 }

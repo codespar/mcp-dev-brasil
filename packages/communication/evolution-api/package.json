@@ -4,7 +4,9 @@
   "description": "MCP server for Evolution API — WhatsApp messaging, instances, contacts",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": { "mcp-evolution-api": "./dist/index.js" },
+  "bin": {
+    "mcp-evolution-api": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -13,8 +15,15 @@
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "typescript": "^5.8.0"
   },
   "license": "MIT",
-  "keywords": ["mcp", "evolution-api", "whatsapp", "messaging", "brazil"]
+  "keywords": [
+    "mcp",
+    "evolution-api",
+    "whatsapp",
+    "messaging",
+    "brazil"
+  ]
 }

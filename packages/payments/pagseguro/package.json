@@ -4,7 +4,9 @@
   "description": "MCP server for PagSeguro/PagBank — orders, Pix, boleto, credit card, charges",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": { "mcp-pagseguro": "./dist/index.js" },
+  "bin": {
+    "mcp-pagseguro": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -13,8 +15,17 @@
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "typescript": "^5.8.0"
   },
   "license": "MIT",
-  "keywords": ["mcp", "pagseguro", "pagbank", "payments", "pix", "boleto", "brazil"]
+  "keywords": [
+    "mcp",
+    "pagseguro",
+    "pagbank",
+    "payments",
+    "pix",
+    "boleto",
+    "brazil"
+  ]
 }

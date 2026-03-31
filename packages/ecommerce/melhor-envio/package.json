@@ -4,7 +4,9 @@
   "description": "MCP server for Melhor Envio — shipping rates, labels, tracking, agencies",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": { "mcp-melhor-envio": "./dist/index.js" },
+  "bin": {
+    "mcp-melhor-envio": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -13,8 +15,15 @@
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "typescript": "^5.8.0"
   },
   "license": "MIT",
-  "keywords": ["mcp", "melhor-envio", "shipping", "tracking", "brazil"]
+  "keywords": [
+    "mcp",
+    "melhor-envio",
+    "shipping",
+    "tracking",
+    "brazil"
+  ]
 }

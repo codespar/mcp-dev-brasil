@@ -4,7 +4,9 @@
   "description": "MCP server for Zoop — marketplace payments, splits, sellers, buyers, transfers",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": { "mcp-zoop": "./dist/index.js" },
+  "bin": {
+    "mcp-zoop": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -13,8 +15,16 @@
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "typescript": "^5.8.0"
   },
   "license": "MIT",
-  "keywords": ["mcp", "zoop", "payments", "marketplace", "split", "brazil"]
+  "keywords": [
+    "mcp",
+    "zoop",
+    "payments",
+    "marketplace",
+    "split",
+    "brazil"
+  ]
 }
