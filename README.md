@@ -4,7 +4,7 @@
     <strong>Every API your AI agent needs to run a business in Brazil.</strong>
   </p>
   <p align="center">
-    19 MCP servers · ~170 tools · 7 verticals · MIT License
+    33 MCP servers · ~300 tools · 8 verticals · MIT License
   </p>
   <p align="center">
     <a href="https://codespar.dev/mcp">Landing Page</a> ·
@@ -15,8 +15,8 @@
   </p>
   <p align="center">
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-    <img src="https://img.shields.io/badge/servers-19-green" alt="19 servers">
-    <img src="https://img.shields.io/badge/tools-~170-orange" alt="~170 tools">
+    <img src="https://img.shields.io/badge/servers-33-green" alt="33 servers">
+    <img src="https://img.shields.io/badge/tools-~300-orange" alt="~300 tools">
     <img src="https://img.shields.io/badge/MCP-compatible-purple" alt="MCP compatible">
   </p>
 </p>
