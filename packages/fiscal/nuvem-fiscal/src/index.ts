@@ -14,6 +14,11 @@
  * - consult_cnpj: Consult company data by CNPJ
  * - consult_cep: Consult address by CEP
  * - register_company: Register a company
+ * - create_cte: Create a CT-e (conhecimento de transporte eletrônico)
+ * - get_cte: Get CT-e details by ID
+ * - cancel_cte: Cancel a CT-e
+ * - create_mdfe: Create a MDF-e (manifesto de documentos fiscais)
+ * - get_nfe_events: Get events for a NF-e
  *
  * Environment:
  *   NUVEM_FISCAL_CLIENT_ID — OAuth2 client ID
@@ -45,7 +50,7 @@ async function getAccessToken(): Promise<string> {
       grant_type: "client_credentials",
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
-      scope: "nfe nfse nfce empresa cnpj cep",
+      scope: "nfe nfse nfce cte mdfe empresa cnpj cep",
     }),
   });
 
@@ -214,6 +219,73 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["cpf_cnpj", "nome_razao_social"],
       },
     },
+    {
+      name: "create_cte",
+      description: "Create a CT-e (conhecimento de transporte eletrônico)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ambiente: { type: "number", enum: [1, 2], description: "1=Produção, 2=Homologação" },
+          tipo: { type: "number", enum: [0, 1, 2, 3], description: "0=Normal, 1=Complementar, 2=Anulação, 3=Substituto" },
+          emitente: { type: "object", description: "Issuer data (CNPJ, IE, address)" },
+          remetente: { type: "object", description: "Sender data (CPF/CNPJ, address)" },
+          destinatario: { type: "object", description: "Recipient data (CPF/CNPJ, address)" },
+          valores: { type: "object", description: "Service values (total, receive, taxes)" },
+          modal: { type: "string", enum: ["rodoviario", "aereo", "aquaviario", "ferroviario", "dutoviario"], description: "Transport mode" },
+        },
+        required: ["ambiente", "emitente", "remetente", "destinatario", "valores"],
+      },
+    },
+    {
+      name: "get_cte",
+      description: "Get CT-e details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "CT-e ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "cancel_cte",
+      description: "Cancel a CT-e",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "CT-e ID" },
+          justificativa: { type: "string", description: "Cancellation reason (min 15 chars)" },
+        },
+        required: ["id", "justificativa"],
+      },
+    },
+    {
+      name: "create_mdfe",
+      description: "Create a MDF-e (manifesto de documentos fiscais eletrônico)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ambiente: { type: "number", enum: [1, 2], description: "1=Produção, 2=Homologação" },
+          emitente: { type: "object", description: "Issuer data (CNPJ, IE, address)" },
+          modal: { type: "string", enum: ["rodoviario", "aereo", "aquaviario", "ferroviario"], description: "Transport mode" },
+          documentos: { type: "array", description: "Array of linked documents (NF-e/CT-e keys)" },
+          percurso: { type: "array", description: "Route UFs (array of state codes)" },
+          veiculos: { type: "object", description: "Vehicle data (plate, RNTRC, etc.)" },
+        },
+        required: ["ambiente", "emitente", "modal", "documentos"],
+      },
+    },
+    {
+      name: "get_nfe_events",
+      description: "Get events for a NF-e (cancellations, corrections, etc.)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "NF-e ID" },
+        },
+        required: ["id"],
+      },
+    },
   ],
 }));
 
@@ -242,6 +314,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("GET", `/cep/${args?.cep}`), null, 2) }] };
       case "register_company":
         return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("POST", "/empresas", args), null, 2) }] };
+      case "create_cte":
+        return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("POST", "/cte", args), null, 2) }] };
+      case "get_cte":
+        return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("GET", `/cte/${args?.id}`), null, 2) }] };
+      case "cancel_cte":
+        return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("POST", `/cte/${args?.id}/cancelamento`, { justificativa: args?.justificativa }), null, 2) }] };
+      case "create_mdfe":
+        return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("POST", "/mdfe", args), null, 2) }] };
+      case "get_nfe_events":
+        return { content: [{ type: "text", text: JSON.stringify(await nuvemFiscalRequest("GET", `/nfe/${args?.id}/eventos`), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }

@@ -12,6 +12,11 @@
  * - get_pix_qrcode: Get Pix QR code payload for an order
  * - create_customer: Create a customer
  * - get_balance: Get account balance
+ * - create_subscription: Create a recurring subscription plan
+ * - list_subscriptions: List subscriptions with filters
+ * - get_notifications: Get payment notification details
+ * - create_split: Create a split payment configuration
+ * - get_dispute: Get dispute/chargeback details
  *
  * Environment:
  *   PAGSEGURO_TOKEN — Bearer token from https://pagseguro.uol.com.br/
@@ -224,6 +229,113 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Get account balance",
       inputSchema: { type: "object", properties: {} },
     },
+    {
+      name: "create_subscription",
+      description: "Create a recurring subscription plan in PagSeguro",
+      inputSchema: {
+        type: "object",
+        properties: {
+          reference_id: { type: "string", description: "Your unique reference ID" },
+          plan: {
+            type: "object",
+            description: "Subscription plan details",
+            properties: {
+              name: { type: "string", description: "Plan name" },
+              interval: {
+                type: "object",
+                properties: {
+                  unit: { type: "string", enum: ["MONTH", "YEAR"], description: "Billing interval unit" },
+                  length: { type: "number", description: "Number of units between charges" },
+                },
+                required: ["unit", "length"],
+              },
+              amount: {
+                type: "object",
+                properties: {
+                  value: { type: "number", description: "Amount in cents (BRL)" },
+                  currency: { type: "string", description: "Currency (BRL)" },
+                },
+                required: ["value"],
+              },
+            },
+            required: ["name", "interval", "amount"],
+          },
+          customer: {
+            type: "object",
+            description: "Customer data (name, email, tax_id)",
+          },
+          payment_method: {
+            type: "object",
+            description: "Payment method (type: CREDIT_CARD or BOLETO)",
+          },
+        },
+        required: ["plan", "customer", "payment_method"],
+      },
+    },
+    {
+      name: "list_subscriptions",
+      description: "List subscriptions with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          reference_id: { type: "string", description: "Filter by reference ID" },
+          status: { type: "string", enum: ["ACTIVE", "SUSPENDED", "CANCELED", "PENDING"], description: "Filter by status" },
+          limit: { type: "number", description: "Number of results (default 20)" },
+          offset: { type: "number", description: "Pagination offset" },
+        },
+      },
+    },
+    {
+      name: "get_notifications",
+      description: "Get payment notification details by notification code",
+      inputSchema: {
+        type: "object",
+        properties: {
+          notificationCode: { type: "string", description: "Notification code received via webhook" },
+        },
+        required: ["notificationCode"],
+      },
+    },
+    {
+      name: "create_split",
+      description: "Create a split payment configuration for marketplace transactions",
+      inputSchema: {
+        type: "object",
+        properties: {
+          charge_id: { type: "string", description: "Charge ID to split" },
+          receivers: {
+            type: "array",
+            description: "Split receivers",
+            items: {
+              type: "object",
+              properties: {
+                account_id: { type: "string", description: "Receiver PagSeguro account ID" },
+                amount: {
+                  type: "object",
+                  properties: {
+                    value: { type: "number", description: "Receiver amount in cents" },
+                  },
+                  required: ["value"],
+                },
+              },
+              required: ["account_id", "amount"],
+            },
+          },
+        },
+        required: ["charge_id", "receivers"],
+      },
+    },
+    {
+      name: "get_dispute",
+      description: "Get dispute/chargeback details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          dispute_id: { type: "string", description: "Dispute ID" },
+        },
+        required: ["dispute_id"],
+      },
+    },
   ],
 }));
 
@@ -256,6 +368,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", "/customers", args), null, 2) }] };
       case "get_balance":
         return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", "/balance"), null, 2) }] };
+      case "create_subscription":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", "/subscriptions", args), null, 2) }] };
+      case "list_subscriptions": {
+        const params = new URLSearchParams();
+        if (args?.reference_id) params.set("reference_id", String(args.reference_id));
+        if (args?.status) params.set("status", String(args.status));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.offset) params.set("offset", String(args.offset));
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/subscriptions?${params}`), null, 2) }] };
+      }
+      case "get_notifications":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/notifications/${args?.notificationCode}`), null, 2) }] };
+      case "create_split":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", `/charges/${args?.charge_id}/splits`, { receivers: args?.receivers }), null, 2) }] };
+      case "get_dispute":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/disputes/${args?.dispute_id}`), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }

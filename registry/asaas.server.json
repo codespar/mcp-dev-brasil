@@ -1,0 +1,74 @@
+{
+  "name": "io.github.codespar/mcp-asaas",
+  "description": "Billing automation, Pix, boleto, subscriptions \u2014 Asaas API",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/payments/asaas"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-03-31",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-asaas",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        {
+          "name": "ASAAS_API_KEY",
+          "description": "Required for asaas",
+          "required": true
+        },
+        {
+          "name": "ASAAS_SANDBOX",
+          "description": "Required for asaas",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "create_payment",
+      "description": "Create a payment in Asaas (Pix, boleto, or credit card)"
+    },
+    {
+      "name": "get_payment",
+      "description": "Get payment details by ID"
+    },
+    {
+      "name": "list_payments",
+      "description": "List payments with optional filters"
+    },
+    {
+      "name": "get_pix_qrcode",
+      "description": "Get Pix QR code for a payment (returns payload and image)"
+    },
+    {
+      "name": "get_boleto",
+      "description": "Get boleto digitable line and barcode for a payment"
+    },
+    {
+      "name": "create_customer",
+      "description": "Create a customer in Asaas"
+    },
+    {
+      "name": "list_customers",
+      "description": "List customers with optional filters"
+    },
+    {
+      "name": "create_subscription",
+      "description": "Create a recurring subscription"
+    },
+    {
+      "name": "get_balance",
+      "description": "Get current account balance"
+    },
+    {
+      "name": "create_transfer",
+      "description": "Create a bank transfer (Pix out or TED)"
+    }
+  ]
+}

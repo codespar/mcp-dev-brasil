@@ -17,6 +17,11 @@
  * - get_financial: List accounts receivable
  * - create_invoice: Consult a specific NF
  * - get_company_info: List companies
+ * - create_service_order: Create a service order (OS)
+ * - list_service_orders: List service orders
+ * - create_purchase_order: Create a purchase order
+ * - list_purchase_orders: List purchase orders
+ * - get_bank_accounts: List registered bank accounts
  *
  * Environment:
  *   OMIE_APP_KEY — Omie app key
@@ -196,6 +201,71 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "create_service_order",
+      description: "Create a service order (OS) in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigo_cliente: { type: "number", description: "Omie customer ID" },
+          codigo_pedido_integracao: { type: "string", description: "Integration order code (unique)" },
+          data_previsao: { type: "string", description: "Expected date (DD/MM/YYYY)" },
+          servicos: { type: "array", description: "Array of services (descricao, valor_unitario, quantidade)" },
+          observacoes: { type: "string", description: "Order notes/observations" },
+        },
+        required: ["codigo_cliente", "codigo_pedido_integracao", "data_previsao", "servicos"],
+      },
+    },
+    {
+      name: "list_service_orders",
+      description: "List service orders (OS) from Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+          etapa: { type: "string", description: "Order stage filter (10=OS, 20=Executar, 50=Faturar, 60=Faturado)" },
+        },
+      },
+    },
+    {
+      name: "create_purchase_order",
+      description: "Create a purchase order in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigo_fornecedor: { type: "number", description: "Omie supplier ID" },
+          codigo_pedido_integracao: { type: "string", description: "Integration order code (unique)" },
+          data_previsao: { type: "string", description: "Expected date (DD/MM/YYYY)" },
+          itens: { type: "array", description: "Array of items (produto, quantidade, valor_unitario)" },
+          observacoes: { type: "string", description: "Order notes/observations" },
+        },
+        required: ["codigo_fornecedor", "codigo_pedido_integracao", "data_previsao", "itens"],
+      },
+    },
+    {
+      name: "list_purchase_orders",
+      description: "List purchase orders from Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+          etapa: { type: "string", description: "Order stage filter (10=Pedido, 50=Receber, 60=Recebido)" },
+        },
+      },
+    },
+    {
+      name: "get_bank_accounts",
+      description: "List registered bank accounts in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+        },
+      },
+    },
   ],
 }));
 
@@ -248,6 +318,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }]), null, 2) }] };
       case "get_company_info":
         return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/geral/empresas/", "ListarEmpresas", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+        }]), null, 2) }] };
+      case "create_service_order":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/servicos/os/", "IncluirOS", [args || {}]), null, 2) }] };
+      case "list_service_orders":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/servicos/os/", "ListarOS", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+          ...(args?.etapa && { etapa: args.etapa }),
+        }]), null, 2) }] };
+      case "create_purchase_order":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/produtos/pedidocompra/", "IncluirPedidoCompra", [args || {}]), null, 2) }] };
+      case "list_purchase_orders":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/produtos/pedidocompra/", "ListarPedidosCompra", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+          ...(args?.etapa && { etapa: args.etapa }),
+        }]), null, 2) }] };
+      case "get_bank_accounts":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/geral/contacorrente/", "ListarContasCorrentes", [{
           pagina: args?.pagina || 1,
           registros_por_pagina: args?.registros_por_pagina || 50,
         }]), null, 2) }] };

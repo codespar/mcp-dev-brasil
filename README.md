@@ -4,7 +4,7 @@
     <strong>Every API your AI agent needs to run a business in Brazil.</strong>
   </p>
   <p align="center">
-    33 MCP servers · ~300 tools · 8 verticals · MIT License
+    33 MCP servers · ~340 tools · 8 verticals · MIT License
   </p>
   <p align="center">
     <a href="https://codespar.dev/mcp">Landing Page</a> ·
@@ -16,7 +16,7 @@
   <p align="center">
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
     <img src="https://img.shields.io/badge/servers-33-green" alt="33 servers">
-    <img src="https://img.shields.io/badge/tools-~300-orange" alt="~300 tools">
+    <img src="https://img.shields.io/badge/tools-~340-orange" alt="~340 tools">
     <img src="https://img.shields.io/badge/MCP-compatible-purple" alt="MCP compatible">
   </p>
 </p>
@@ -111,7 +111,7 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 
 ## Servers
 
-### 💳 Payments (8 servers)
+### 💳 Payments (12 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
@@ -119,26 +119,32 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 | **[PagSeguro](packages/payments/pagseguro)** | 10 | Orders, charges, Pix QR, refunds | Bearer Token |
 | **[iugu](packages/payments/iugu)** | 8 | Invoices, subscriptions, payment methods | Basic Auth |
 | **[Pix BCB](packages/payments/pix-bcb)** | 8 | Official Central Bank Pix API (cob, DICT) | OAuth2 + mTLS |
-| **[Zoop](packages/payments/zoop)** | 10 | Marketplace payments, split rules, sellers | Basic Auth |
+| **[Zoop](packages/payments/zoop)** | 20 | Marketplace payments, split rules, sellers, subscriptions | Basic Auth |
 | **[Pagar.me](packages/payments/pagar-me)** | 10 | Orders, charges, recipients, transfers | Basic Auth |
 | **[EBANX](packages/payments/ebanx)** | 7 | Cross-border payments, payouts, FX rates | Integration Key |
 | **[EFÍ/Gerencianet](packages/payments/efi)** | 8 | Pix, boleto, carnet, open finance | OAuth2 |
+| **[Vindi](packages/payments/vindi)** | 10 | Recurring billing, subscriptions, invoices | API Key |
+| **[Cielo](packages/payments/cielo)** | 8 | Credit card, debit, boleto, recurrent payments | Merchant Key |
+| **[Stone](packages/payments/stone)** | 8 | Open banking, payments, Pix, transfers | OAuth2 |
+| **[Celcoin](packages/payments/celcoin)** | 8 | Pix, boleto, transfers, bill payments, top-ups | OAuth2 |
 
-### 📄 Fiscal (2 servers)
+### 📄 Fiscal (3 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
 | **[Focus NFe](packages/fiscal/focus-nfe)** | 8 | NFe/NFSe/NFCe emission and management | Basic Auth |
 | **[Nuvem Fiscal](packages/fiscal/nuvem-fiscal)** | 10 | NFe/NFSe/NFCe, CNPJ/CEP lookup | OAuth2 |
+| **[Conta Azul](packages/fiscal/conta-azul)** | 10 | Accounting, invoicing, customers, products | OAuth2 |
 
-### 📱 Communication (4 servers)
+### 📱 Communication (5 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
 | **[Evolution API](packages/communication/evolution-api)** | 10 | WhatsApp automation (Baileys) | API Key |
-| **[Z-API](packages/communication/z-api)** | 10 | WhatsApp messaging, contacts, buttons | Instance + Token |
+| **[Z-API](packages/communication/z-api)** | 20 | WhatsApp messaging, contacts, groups, labels | Instance + Token |
 | **[Zenvia](packages/communication/zenvia)** | 8 | Multichannel (SMS, WhatsApp, RCS) | API Token |
 | **[RD Station](packages/communication/rd-station)** | 8 | Marketing automation, CRM, leads | Bearer Token |
+| **[Take Blip](packages/communication/take-blip)** | 8 | Chatbots, messaging, contacts, broadcasts | Access Key |
 
 ### 🇧🇷 Identity (1 server)
 
@@ -146,29 +152,42 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 |--------|-------|-------------|------|
 | **[BrasilAPI](packages/identity/brasil-api)** | 10 | CEP, CNPJ, banks, holidays, FIPE, DDD, weather | **None** (free) |
 
-### 🏦 Banking (1 server)
+### 🏦 Banking (2 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
 | **[Stark Bank](packages/banking/stark-bank)** | 10 | Transfers, boleto, invoices, Pix, balance | Access Token |
+| **[Open Finance](packages/banking/open-finance)** | 8 | Open Finance Brasil — accounts, transactions, consents, investments | OAuth2 |
 
 ### 📦 E-commerce / Logistics (3 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[Melhor Envio](packages/ecommerce/melhor-envio)** | 8 | Shipping quotes, tracking, labels | Bearer Token |
+| **[Melhor Envio](packages/ecommerce/melhor-envio)** | 18 | Shipping quotes, tracking, labels, cart, agencies | Bearer Token |
 | **[SuperFrete](packages/ecommerce/superfrete)** | 11 | Discounted shipping, freight calc, labels, tracking | Bearer Token |
 | **[Correios](packages/ecommerce/correios)** | 6 | Tracking, shipping calc, CEP | OAuth |
+| **[VTEX](packages/ecommerce/vtex)** | 10 | E-commerce, orders, products, inventory, shipping | App Key + Token |
 
-### 📊 ERP (1 server)
+### 📊 ERP (3 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
 | **[Omie](packages/erp/omie)** | 10 | Customers, products, orders, invoices, financials | App Key + Secret |
+| **[Bling](packages/erp/bling)** | 10 | ERP, products, orders, invoices, stock management | OAuth2 |
+| **[Tiny](packages/erp/tiny)** | 10 | ERP, products, orders, invoices, stock, accounts payable | API Token |
+
+### 🪙 Crypto / Stablecoins (4 servers)
+
+| Server | Tools | Description | Auth |
+|--------|-------|-------------|------|
+| **[UnblockPay](packages/crypto/unblockpay)** | 10 | Fiat-to-stablecoin onramp/offramp, wallets, transfers | API Key |
+| **[Circle](packages/crypto/circle)** | 10 | USDC payments, wallets, payouts, transfers | API Key |
+| **[Mercado Bitcoin](packages/crypto/mercado-bitcoin)** | 10 | Brazilian crypto exchange, trading, orderbook, withdrawals | API Key + Secret |
+| **[Bitso](packages/crypto/bitso)** | 10 | Latin American crypto exchange, trading, funding, withdrawals | API Key + Secret |
 
 ### 🔜 Coming Soon
 
-Cielo · Stone · Vindi · Celcoin · Conta Azul · Take Blip · VTEX · Bling · Tiny · Open Finance Brasil
+Foxbit · BRLA · PagBrasil · Juno · NFe.io · PlugNotas · Movidesk · Infobip · Frenet · Loggi · Kangu · Inter · Nubank · ReceitaWS · BigDataCorp · Sankhya · Totvs
 
 ---
 

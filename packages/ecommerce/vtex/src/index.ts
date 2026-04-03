@@ -14,6 +14,11 @@
  * - get_shipping_rates: Get shipping rates simulation
  * - create_promotion: Create a promotion/discount
  * - get_catalog: Get catalog category tree
+ * - create_product: Create a new product in the catalog
+ * - update_product: Update an existing product
+ * - create_sku: Create a new SKU for a product
+ * - create_category: Create a new category
+ * - list_categories: List categories with pagination
  *
  * Environment:
  *   VTEX_ACCOUNT_NAME — VTEX account name
@@ -193,6 +198,89 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "create_product",
+      description: "Create a new product in the VTEX catalog",
+      inputSchema: {
+        type: "object",
+        properties: {
+          Name: { type: "string", description: "Product name" },
+          CategoryId: { type: "number", description: "Category ID" },
+          BrandId: { type: "number", description: "Brand ID" },
+          IsVisible: { type: "boolean", description: "Product visibility (default true)" },
+          Description: { type: "string", description: "Product description (HTML supported)" },
+          DescriptionShort: { type: "string", description: "Short description" },
+          RefId: { type: "string", description: "Reference ID (internal code)" },
+          Title: { type: "string", description: "Page title (SEO)" },
+          LinkId: { type: "string", description: "URL slug" },
+          IsActive: { type: "boolean", description: "Active status (default true)" },
+        },
+        required: ["Name", "CategoryId", "BrandId"],
+      },
+    },
+    {
+      name: "update_product",
+      description: "Update an existing product in the VTEX catalog",
+      inputSchema: {
+        type: "object",
+        properties: {
+          productId: { type: "number", description: "Product ID to update" },
+          Name: { type: "string", description: "Product name" },
+          CategoryId: { type: "number", description: "Category ID" },
+          BrandId: { type: "number", description: "Brand ID" },
+          IsVisible: { type: "boolean", description: "Product visibility" },
+          Description: { type: "string", description: "Product description" },
+          IsActive: { type: "boolean", description: "Active status" },
+        },
+        required: ["productId"],
+      },
+    },
+    {
+      name: "create_sku",
+      description: "Create a new SKU for a product",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ProductId: { type: "number", description: "Parent product ID" },
+          Name: { type: "string", description: "SKU name" },
+          RefId: { type: "string", description: "Reference ID (internal code)" },
+          PackagedHeight: { type: "number", description: "Packaged height in cm" },
+          PackagedLength: { type: "number", description: "Packaged length in cm" },
+          PackagedWidth: { type: "number", description: "Packaged width in cm" },
+          PackagedWeightKg: { type: "number", description: "Packaged weight in kg" },
+          IsActive: { type: "boolean", description: "Active status" },
+        },
+        required: ["ProductId", "Name"],
+      },
+    },
+    {
+      name: "create_category",
+      description: "Create a new category in the catalog",
+      inputSchema: {
+        type: "object",
+        properties: {
+          Name: { type: "string", description: "Category name" },
+          FatherCategoryId: { type: "number", description: "Parent category ID (null for root)" },
+          Title: { type: "string", description: "Page title (SEO)" },
+          Description: { type: "string", description: "Category description" },
+          Keywords: { type: "string", description: "SEO keywords (comma-separated)" },
+          IsActive: { type: "boolean", description: "Active status (default true)" },
+          ShowInStoreFront: { type: "boolean", description: "Show in store navigation" },
+        },
+        required: ["Name"],
+      },
+    },
+    {
+      name: "list_categories",
+      description: "List all categories with pagination",
+      inputSchema: {
+        type: "object",
+        properties: {
+          from: { type: "number", description: "Start index (default 1)" },
+          to: { type: "number", description: "End index (default 10)" },
+        },
+      },
+    },
   ],
 }));
 
@@ -244,6 +332,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "get_catalog": {
         const levels = args?.levels || 3;
         return { content: [{ type: "text", text: JSON.stringify(await vtexRequest("GET", `/catalog_system/pub/category/tree/${levels}`), null, 2) }] };
+      }
+      case "create_product": {
+        const { ...productData } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await vtexRequest("POST", "/catalog/pvt/product", productData), null, 2) }] };
+      }
+      case "update_product": {
+        const { productId, ...productData } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await vtexRequest("PUT", `/catalog/pvt/product/${productId}`, productData), null, 2) }] };
+      }
+      case "create_sku": {
+        const { ...skuData } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await vtexRequest("POST", "/catalog/pvt/stockkeepingunit", skuData), null, 2) }] };
+      }
+      case "create_category": {
+        const { ...categoryData } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await vtexRequest("POST", "/catalog/pvt/category", categoryData), null, 2) }] };
+      }
+      case "list_categories": {
+        const from = args?.from || 1;
+        const to = args?.to || 10;
+        return { content: [{ type: "text", text: JSON.stringify(await vtexRequest("GET", `/catalog_system/pvt/category/GetCategoryList?_from=${from}&_to=${to}`), null, 2) }] };
       }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };

@@ -12,6 +12,11 @@
  * - get_recurrent: Get recurrent payment details
  * - tokenize_card: Tokenize a credit card for future use
  * - create_boleto: Create a boleto payment
+ * - create_pix: Create a Pix payment
+ * - get_pix: Get Pix payment details by PaymentId
+ * - create_debit: Create a debit card sale
+ * - create_ewallet: Create a digital wallet payment (Google Pay, Samsung Pay)
+ * - get_antifraud: Get anti-fraud analysis for a payment
  *
  * Environment:
  *   CIELO_MERCHANT_ID — MerchantId from Cielo
@@ -178,6 +183,77 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["merchantOrderId", "customerName", "amount", "expirationDate", "provider"],
       },
     },
+    {
+      name: "create_pix",
+      description: "Create a Pix payment in Cielo (generates QR code)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          merchantOrderId: { type: "string", description: "Merchant order reference" },
+          customerName: { type: "string", description: "Customer name" },
+          customerIdentity: { type: "string", description: "CPF or CNPJ" },
+          amount: { type: "number", description: "Amount in cents (e.g., 15700 = R$157.00)" },
+          expirationDate: { type: "string", description: "QR code expiration (ISO 8601, e.g. 2025-12-31T23:59:59)" },
+        },
+        required: ["merchantOrderId", "customerName", "amount"],
+      },
+    },
+    {
+      name: "get_pix",
+      description: "Get Pix payment details and QR code by PaymentId",
+      inputSchema: {
+        type: "object",
+        properties: {
+          paymentId: { type: "string", description: "Payment ID (GUID)" },
+        },
+        required: ["paymentId"],
+      },
+    },
+    {
+      name: "create_debit",
+      description: "Create a debit card sale in Cielo (requires 3DS authentication)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          merchantOrderId: { type: "string", description: "Merchant order reference" },
+          customerName: { type: "string", description: "Customer name" },
+          amount: { type: "number", description: "Amount in cents" },
+          cardNumber: { type: "string", description: "Debit card number" },
+          holder: { type: "string", description: "Cardholder name" },
+          expirationDate: { type: "string", description: "Expiration date (MM/YYYY)" },
+          securityCode: { type: "string", description: "CVV" },
+          brand: { type: "string", enum: ["Visa", "Master", "Elo"], description: "Card brand" },
+          returnUrl: { type: "string", description: "URL to redirect after 3DS authentication" },
+        },
+        required: ["merchantOrderId", "customerName", "amount", "cardNumber", "holder", "expirationDate", "securityCode", "brand", "returnUrl"],
+      },
+    },
+    {
+      name: "create_ewallet",
+      description: "Create a digital wallet payment (Google Pay, Samsung Pay, Apple Pay)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          merchantOrderId: { type: "string", description: "Merchant order reference" },
+          customerName: { type: "string", description: "Customer name" },
+          amount: { type: "number", description: "Amount in cents" },
+          walletType: { type: "string", enum: ["GooglePay", "SamsungPay", "ApplePay"], description: "Digital wallet type" },
+          walletKey: { type: "string", description: "Wallet token/key from wallet provider" },
+        },
+        required: ["merchantOrderId", "customerName", "amount", "walletType", "walletKey"],
+      },
+    },
+    {
+      name: "get_antifraud",
+      description: "Get anti-fraud analysis details for a payment",
+      inputSchema: {
+        type: "object",
+        properties: {
+          paymentId: { type: "string", description: "Payment ID (GUID)" },
+        },
+        required: ["paymentId"],
+      },
+    },
   ],
 }));
 
@@ -281,6 +357,60 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
         return { content: [{ type: "text", text: JSON.stringify(await cieloRequest("POST", "/sales", payload), null, 2) }] };
       }
+      case "create_pix": {
+        const payload = {
+          MerchantOrderId: args?.merchantOrderId,
+          Customer: {
+            Name: args?.customerName,
+            Identity: args?.customerIdentity,
+          },
+          Payment: {
+            Type: "Pix",
+            Amount: args?.amount,
+            ...(args?.expirationDate && { QrCodeExpiration: args.expirationDate }),
+          },
+        };
+        return { content: [{ type: "text", text: JSON.stringify(await cieloRequest("POST", "/sales", payload), null, 2) }] };
+      }
+      case "get_pix":
+        return { content: [{ type: "text", text: JSON.stringify(await cieloRequest("GET", `/sales/${args?.paymentId}`, undefined, true), null, 2) }] };
+      case "create_debit": {
+        const payload = {
+          MerchantOrderId: args?.merchantOrderId,
+          Customer: { Name: args?.customerName },
+          Payment: {
+            Type: "DebitCard",
+            Amount: args?.amount,
+            Authenticate: true,
+            ReturnUrl: args?.returnUrl,
+            DebitCard: {
+              CardNumber: args?.cardNumber,
+              Holder: args?.holder,
+              ExpirationDate: args?.expirationDate,
+              SecurityCode: args?.securityCode,
+              Brand: args?.brand,
+            },
+          },
+        };
+        return { content: [{ type: "text", text: JSON.stringify(await cieloRequest("POST", "/sales", payload), null, 2) }] };
+      }
+      case "create_ewallet": {
+        const payload = {
+          MerchantOrderId: args?.merchantOrderId,
+          Customer: { Name: args?.customerName },
+          Payment: {
+            Type: "CreditCard",
+            Amount: args?.amount,
+            Wallet: {
+              Type: args?.walletType,
+              WalletKey: args?.walletKey,
+            },
+          },
+        };
+        return { content: [{ type: "text", text: JSON.stringify(await cieloRequest("POST", "/sales", payload), null, 2) }] };
+      }
+      case "get_antifraud":
+        return { content: [{ type: "text", text: JSON.stringify(await cieloRequest("GET", `/sales/${args?.paymentId}/antifraud`, undefined, true), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }

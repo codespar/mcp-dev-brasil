@@ -1,0 +1,114 @@
+{
+  "name": "io.github.codespar/mcp-z-api",
+  "description": "WhatsApp messaging, contacts, groups, labels \u2014 Z-API",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/communication/z-api"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-03-31",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-z-api",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        {
+          "name": "ZAPI_INSTANCE_ID",
+          "description": "Required for z-api",
+          "required": true
+        },
+        {
+          "name": "ZAPI_TOKEN",
+          "description": "Required for z-api",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "send_text",
+      "description": "Send a text message via WhatsApp"
+    },
+    {
+      "name": "send_image",
+      "description": "Send an image message via WhatsApp"
+    },
+    {
+      "name": "send_document",
+      "description": "Send a document via WhatsApp"
+    },
+    {
+      "name": "send_audio",
+      "description": "Send an audio message via WhatsApp"
+    },
+    {
+      "name": "get_contacts",
+      "description": "Get all WhatsApp contacts"
+    },
+    {
+      "name": "check_number",
+      "description": "Check if a phone number has WhatsApp"
+    },
+    {
+      "name": "get_profile_picture",
+      "description": "Get profile picture URL for a phone number"
+    },
+    {
+      "name": "get_messages",
+      "description": "Get messages for a phone number"
+    },
+    {
+      "name": "send_button_list",
+      "description": "Send a button list message via WhatsApp"
+    },
+    {
+      "name": "get_status",
+      "description": "Get WhatsApp instance connection status"
+    },
+    {
+      "name": "create_group",
+      "description": "Create a WhatsApp group"
+    },
+    {
+      "name": "get_group_metadata",
+      "description": "Get group metadata and participants"
+    },
+    {
+      "name": "add_group_participant",
+      "description": "Add a participant to a WhatsApp group"
+    },
+    {
+      "name": "remove_group_participant",
+      "description": "Remove a participant from a WhatsApp group"
+    },
+    {
+      "name": "send_location",
+      "description": "Send a location message via WhatsApp"
+    },
+    {
+      "name": "send_contact",
+      "description": "Send a contact card via WhatsApp"
+    },
+    {
+      "name": "add_label",
+      "description": "Assign a label/tag to a chat"
+    },
+    {
+      "name": "get_labels",
+      "description": "List all available labels/tags"
+    },
+    {
+      "name": "read_message",
+      "description": "Mark messages as read"
+    },
+    {
+      "name": "delete_message",
+      "description": "Delete a message"
+    }
+  ]
+}

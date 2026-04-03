@@ -10,6 +10,11 @@
  * - list_services: List available shipping services
  * - find_cep: Look up address by CEP
  * - create_prepost: Create a pre-posting order
+ * - list_postal_codes: Search addresses by street/location
+ * - create_collection: Schedule a package collection (pickup)
+ * - get_collection: Get collection request details
+ * - create_reverse: Create a reverse logistics (return) order
+ * - get_reverse: Get reverse logistics order details
  *
  * Environment:
  *   CORREIOS_USER — Correios API username
@@ -159,6 +164,71 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["codigoServico", "remetente", "destinatario", "objetoPostal"],
       },
     },
+    {
+      name: "list_postal_codes",
+      description: "Search addresses by street name or location (returns matching CEPs)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          endereco: { type: "string", description: "Street name or address to search" },
+          uf: { type: "string", description: "State abbreviation (e.g. SP, RJ)" },
+          localidade: { type: "string", description: "City name" },
+        },
+        required: ["endereco"],
+      },
+    },
+    {
+      name: "create_collection",
+      description: "Schedule a package collection (pickup) from an address",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigoServico: { type: "string", description: "Service code" },
+          remetente: { type: "object", description: "Sender info (name, address, CEP, phone)" },
+          objeto: { type: "object", description: "Package details (weight, dimensions, quantity)" },
+          dataColeta: { type: "string", description: "Collection date (YYYY-MM-DD)" },
+          turno: { type: "string", enum: ["M", "T", "N"], description: "Collection shift (M=Morning, T=Afternoon, N=Night)" },
+        },
+        required: ["codigoServico", "remetente", "objeto", "dataColeta"],
+      },
+    },
+    {
+      name: "get_collection",
+      description: "Get collection request details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Collection request ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "create_reverse",
+      description: "Create a reverse logistics (return) order",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigoServico: { type: "string", description: "Service code" },
+          remetente: { type: "object", description: "Original recipient (returning the package)" },
+          destinatario: { type: "object", description: "Original sender (receiving the return)" },
+          objeto: { type: "object", description: "Package details (weight, dimensions)" },
+          motivo: { type: "string", description: "Return reason" },
+        },
+        required: ["codigoServico", "remetente", "destinatario", "objeto"],
+      },
+    },
+    {
+      name: "get_reverse",
+      description: "Get reverse logistics order details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Reverse logistics order ID" },
+        },
+        required: ["id"],
+      },
+    },
   ],
 }));
 
@@ -184,6 +254,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("GET", `/cep/v2/enderecos/${args?.cep}`), null, 2) }] };
       case "create_prepost":
         return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("POST", "/prepostagem/v1/prepostagens", args), null, 2) }] };
+      case "list_postal_codes": {
+        const params = new URLSearchParams({ endereco: String(args?.endereco) });
+        if (args?.uf) params.set("uf", String(args.uf));
+        if (args?.localidade) params.set("localidade", String(args.localidade));
+        return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("GET", `/cep/v2/enderecos?${params}`), null, 2) }] };
+      }
+      case "create_collection":
+        return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("POST", "/coleta/v1/coletas", args), null, 2) }] };
+      case "get_collection":
+        return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("GET", `/coleta/v1/coletas/${args?.id}`), null, 2) }] };
+      case "create_reverse":
+        return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("POST", "/logisticareversa/v1/solicitacoes", args), null, 2) }] };
+      case "get_reverse":
+        return { content: [{ type: "text", text: JSON.stringify(await correiosRequest("GET", `/logisticareversa/v1/solicitacoes/${args?.id}`), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }

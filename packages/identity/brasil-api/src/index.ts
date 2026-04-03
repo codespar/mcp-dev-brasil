@@ -14,6 +14,11 @@
  * - get_isbn: Look up book by ISBN
  * - get_ncm: Look up NCM code (tax classification)
  * - get_cptec_weather: Get weather forecast for a city
+ * - get_pix_participants: List Pix participant institutions (PSPs)
+ * - get_domain_info: Look up domain registration info (.br)
+ * - get_ibge_municipalities: List municipalities for a state (IBGE)
+ * - get_tax_rates: Get current Brazilian tax rates (Selic, CDI, IPCA)
+ * - get_cptec_cities: Search CPTEC cities by name
  *
  * Environment: none (public API, no authentication)
  */
@@ -151,6 +156,55 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["city_code"],
       },
     },
+    {
+      name: "get_pix_participants",
+      description: "List Pix participant institutions (PSPs/banks enrolled in Pix)",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_domain_info",
+      description: "Look up .br domain registration info",
+      inputSchema: {
+        type: "object",
+        properties: {
+          domain: { type: "string", description: "Domain name (e.g. example.com.br)" },
+        },
+        required: ["domain"],
+      },
+    },
+    {
+      name: "get_ibge_municipalities",
+      description: "List all municipalities for a Brazilian state (IBGE data)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          uf: { type: "string", description: "State abbreviation (e.g. SP, RJ, MG)" },
+        },
+        required: ["uf"],
+      },
+    },
+    {
+      name: "get_tax_rates",
+      description: "Get current Brazilian tax/economic rates (Selic, CDI, IPCA)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          acronym: { type: "string", enum: ["SELIC", "CDI", "IPCA"], description: "Tax rate acronym" },
+        },
+        required: ["acronym"],
+      },
+    },
+    {
+      name: "get_cptec_cities",
+      description: "Search CPTEC/INPE cities by name for weather forecasts",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cityName: { type: "string", description: "City name to search" },
+        },
+        required: ["cityName"],
+      },
+    },
   ],
 }));
 
@@ -181,6 +235,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const days = args?.days || 6;
         return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/cptec/v1/clima/previsao/${args?.city_code}/${days}`), null, 2) }] };
       }
+      case "get_pix_participants":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest("/pix/v1/participants"), null, 2) }] };
+      case "get_domain_info":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/registrobr/v1/${args?.domain}`), null, 2) }] };
+      case "get_ibge_municipalities":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/ibge/municipios/v1/${args?.uf}?providers=dados-abertos-br,gov,wikipedia`), null, 2) }] };
+      case "get_tax_rates":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/taxas/v1/${args?.acronym}`), null, 2) }] };
+      case "get_cptec_cities":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/cptec/v1/cidade/${encodeURIComponent(String(args?.cityName))}`), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }

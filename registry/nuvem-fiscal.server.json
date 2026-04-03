@@ -1,0 +1,74 @@
+{
+  "name": "io.github.codespar/mcp-nuvem-fiscal",
+  "description": "NFe/NFSe/NFCe emission, CNPJ/CEP lookup \u2014 Nuvem Fiscal API",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/fiscal/nuvem-fiscal"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-03-31",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-nuvem-fiscal",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        {
+          "name": "NUVEM_FISCAL_CLIENT_SECRET",
+          "description": "Required for nuvem-fiscal",
+          "required": true
+        },
+        {
+          "name": "NUVEM_FISCAL_CLIENT_ID",
+          "description": "Required for nuvem-fiscal",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "create_nfe",
+      "description": "Create a NF-e (nota fiscal eletr\u00f4nica)"
+    },
+    {
+      "name": "get_nfe",
+      "description": "Get NF-e details by ID"
+    },
+    {
+      "name": "cancel_nfe",
+      "description": "Cancel a NF-e"
+    },
+    {
+      "name": "create_nfse",
+      "description": "Create a NFS-e (nota fiscal de servi\u00e7o eletr\u00f4nica)"
+    },
+    {
+      "name": "get_nfse",
+      "description": "Get NFS-e details by ID"
+    },
+    {
+      "name": "cancel_nfse",
+      "description": "Cancel a NFS-e"
+    },
+    {
+      "name": "create_nfce",
+      "description": "Create a NFC-e (nota fiscal de consumidor eletr\u00f4nica)"
+    },
+    {
+      "name": "consult_cnpj",
+      "description": "Consult company data by CNPJ number"
+    },
+    {
+      "name": "consult_cep",
+      "description": "Consult address by CEP (postal code)"
+    },
+    {
+      "name": "register_company",
+      "description": "Register a company in Nuvem Fiscal"
+    }
+  ]
+}

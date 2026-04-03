@@ -12,8 +12,13 @@
  * - create_customer: Create a customer
  * - list_customers: List customers
  * - create_subscription: Create a recurring subscription
+ * - list_subscriptions: List subscriptions with filters
+ * - cancel_subscription: Cancel a subscription by ID
  * - get_balance: Get account balance
  * - create_transfer: Create a bank transfer (Pix out)
+ * - get_webhook_events: List webhook events
+ * - create_subaccount: Create a subaccount (split)
+ * - get_installments: Get installment details for a payment
  *
  * Environment:
  *   ASAAS_API_KEY — API key from https://www.asaas.com/
@@ -164,6 +169,73 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: { type: "object", properties: {} },
     },
     {
+      name: "list_subscriptions",
+      description: "List subscriptions with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          customer: { type: "string", description: "Filter by customer ID" },
+          status: { type: "string", enum: ["ACTIVE", "INACTIVE", "EXPIRED"], description: "Filter by status" },
+          limit: { type: "number", description: "Number of results (default 10)" },
+          offset: { type: "number", description: "Pagination offset" },
+        },
+      },
+    },
+    {
+      name: "cancel_subscription",
+      description: "Cancel a subscription by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Subscription ID (sub_xxx)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "get_webhook_events",
+      description: "List webhook events (payment confirmations, transfers, etc.)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          event: { type: "string", description: "Filter by event type (e.g. PAYMENT_CONFIRMED, PAYMENT_RECEIVED)" },
+          limit: { type: "number", description: "Number of results (default 10)" },
+          offset: { type: "number", description: "Pagination offset" },
+        },
+      },
+    },
+    {
+      name: "create_subaccount",
+      description: "Create a subaccount for payment splitting",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Subaccount name" },
+          email: { type: "string", description: "Email address" },
+          cpfCnpj: { type: "string", description: "CPF or CNPJ (numbers only)" },
+          companyType: { type: "string", enum: ["MEI", "LIMITED", "INDIVIDUAL", "ASSOCIATION"], description: "Company type" },
+          phone: { type: "string", description: "Phone number" },
+          mobilePhone: { type: "string", description: "Mobile phone number" },
+          postalCode: { type: "string", description: "Postal code (CEP)" },
+          address: { type: "string", description: "Street address" },
+          addressNumber: { type: "string", description: "Address number" },
+          province: { type: "string", description: "Neighborhood" },
+        },
+        required: ["name", "email", "cpfCnpj"],
+      },
+    },
+    {
+      name: "get_installments",
+      description: "Get installment details for a payment",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Payment ID (pay_xxx)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
       name: "create_transfer",
       description: "Create a bank transfer (Pix out or TED)",
       inputSchema: {
@@ -214,6 +286,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("POST", "/subscriptions", args), null, 2) }] };
       case "get_balance":
         return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("GET", "/finance/balance"), null, 2) }] };
+      case "list_subscriptions": {
+        const params = new URLSearchParams();
+        if (args?.customer) params.set("customer", String(args.customer));
+        if (args?.status) params.set("status", String(args.status));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.offset) params.set("offset", String(args.offset));
+        return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("GET", `/subscriptions?${params}`), null, 2) }] };
+      }
+      case "cancel_subscription":
+        return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("DELETE", `/subscriptions/${args?.id}`), null, 2) }] };
+      case "get_webhook_events": {
+        const params = new URLSearchParams();
+        if (args?.event) params.set("event", String(args.event));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.offset) params.set("offset", String(args.offset));
+        return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("GET", `/webhook/events?${params}`), null, 2) }] };
+      }
+      case "create_subaccount":
+        return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("POST", "/accounts", args), null, 2) }] };
+      case "get_installments":
+        return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("GET", `/payments/${args?.id}/installments`), null, 2) }] };
       case "create_transfer":
         return { content: [{ type: "text", text: JSON.stringify(await asaasRequest("POST", "/transfers", args), null, 2) }] };
       default:

@@ -1,0 +1,63 @@
+{
+  "name": "io.github.codespar/mcp-brasil-api",
+  "description": "CEP, CNPJ, banks, holidays, FIPE, DDD \u2014 BrasilAPI (free, no key)",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/identity/brasil-api"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-03-31",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-brasil-api",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": []
+    }
+  ],
+  "tools": [
+    {
+      "name": "get_cep",
+      "description": "Look up address by CEP (Brazilian postal code)"
+    },
+    {
+      "name": "get_cnpj",
+      "description": "Look up company information by CNPJ"
+    },
+    {
+      "name": "get_banks",
+      "description": "List all Brazilian banks with codes and names"
+    },
+    {
+      "name": "get_holidays",
+      "description": "List national holidays for a given year"
+    },
+    {
+      "name": "get_fipe_brands",
+      "description": "List vehicle brands by type from FIPE table"
+    },
+    {
+      "name": "get_fipe_price",
+      "description": "Get vehicle price from FIPE table by code"
+    },
+    {
+      "name": "get_ddd",
+      "description": "Get state and cities for a DDD (area code)"
+    },
+    {
+      "name": "get_isbn",
+      "description": "Look up book information by ISBN"
+    },
+    {
+      "name": "get_ncm",
+      "description": "Look up NCM tax classification code"
+    },
+    {
+      "name": "get_cptec_weather",
+      "description": "Get weather forecast for a city (CPTEC/INPE)"
+    }
+  ]
+}

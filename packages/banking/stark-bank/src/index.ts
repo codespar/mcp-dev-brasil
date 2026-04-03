@@ -14,6 +14,11 @@
  * - list_invoices: List invoices with filters
  * - create_pix_request: Create a Pix payment request
  * - get_webhook_events: Get webhook events
+ * - create_payment_request: Create a payment request for approval
+ * - get_payment_request: Get payment request details by ID
+ * - list_payment_requests: List payment requests with filters
+ * - create_brcode_payment: Pay a BR Code (Pix QR code)
+ * - get_deposit: Get deposit details by ID
  *
  * Environment:
  *   STARK_BANK_ACCESS_TOKEN — API access token
@@ -186,6 +191,72 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "create_payment_request",
+      description: "Create a payment request for approval workflow",
+      inputSchema: {
+        type: "object",
+        properties: {
+          centerId: { type: "string", description: "Cost center ID" },
+          type: { type: "string", enum: ["transfer", "brcode-payment", "boleto-payment", "utility-payment"], description: "Payment type" },
+          payment: { type: "object", description: "Payment details (varies by type: amount, taxId, description, etc.)" },
+          due: { type: "string", description: "Due date (YYYY-MM-DD)" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags for organization" },
+        },
+        required: ["centerId", "type", "payment"],
+      },
+    },
+    {
+      name: "get_payment_request",
+      description: "Get payment request details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Payment request ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "list_payment_requests",
+      description: "List payment requests with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "Number of results (default 10)" },
+          after: { type: "string", description: "Filter by date after (YYYY-MM-DD)" },
+          before: { type: "string", description: "Filter by date before (YYYY-MM-DD)" },
+          status: { type: "string", enum: ["pending", "approved", "denied"], description: "Filter by status" },
+          centerId: { type: "string", description: "Filter by cost center ID" },
+          type: { type: "string", description: "Filter by payment type" },
+        },
+      },
+    },
+    {
+      name: "create_brcode_payment",
+      description: "Pay a BR Code (Pix QR code / copia-e-cola)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          brcode: { type: "string", description: "BR Code payload (Pix copia-e-cola string)" },
+          taxId: { type: "string", description: "Payer CPF or CNPJ" },
+          description: { type: "string", description: "Payment description" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags for organization" },
+        },
+        required: ["brcode", "taxId"],
+      },
+    },
+    {
+      name: "get_deposit",
+      description: "Get deposit details by ID (incoming Pix or TED)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Deposit ID" },
+        },
+        required: ["id"],
+      },
+    },
   ],
 }));
 
@@ -232,6 +303,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args?.isDelivered !== undefined) params.set("isDelivered", String(args.isDelivered));
         return { content: [{ type: "text", text: JSON.stringify(await starkBankRequest("GET", `/event?${params}`), null, 2) }] };
       }
+      case "create_payment_request":
+        return { content: [{ type: "text", text: JSON.stringify(await starkBankRequest("POST", "/payment-request", { requests: [args] }), null, 2) }] };
+      case "get_payment_request":
+        return { content: [{ type: "text", text: JSON.stringify(await starkBankRequest("GET", `/payment-request/${args?.id}`), null, 2) }] };
+      case "list_payment_requests": {
+        const params = new URLSearchParams();
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.after) params.set("after", String(args.after));
+        if (args?.before) params.set("before", String(args.before));
+        if (args?.status) params.set("status", String(args.status));
+        if (args?.centerId) params.set("centerId", String(args.centerId));
+        if (args?.type) params.set("type", String(args.type));
+        return { content: [{ type: "text", text: JSON.stringify(await starkBankRequest("GET", `/payment-request?${params}`), null, 2) }] };
+      }
+      case "create_brcode_payment":
+        return { content: [{ type: "text", text: JSON.stringify(await starkBankRequest("POST", "/brcode-payment", { payments: [args] }), null, 2) }] };
+      case "get_deposit":
+        return { content: [{ type: "text", text: JSON.stringify(await starkBankRequest("GET", `/deposit/${args?.id}`), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }

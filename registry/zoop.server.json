@@ -1,0 +1,114 @@
+{
+  "name": "io.github.codespar/mcp-zoop",
+  "description": "Marketplace payments, split rules, sellers \u2014 Zoop API",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/payments/zoop"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-03-31",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-zoop",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        {
+          "name": "ZOOP_MARKETPLACE_ID",
+          "description": "Required for zoop",
+          "required": true
+        },
+        {
+          "name": "ZOOP_API_KEY",
+          "description": "Required for zoop",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "create_transaction",
+      "description": "Create a transaction in Zoop (Pix, boleto, or credit card)"
+    },
+    {
+      "name": "get_transaction",
+      "description": "Get transaction details by ID"
+    },
+    {
+      "name": "list_transactions",
+      "description": "List transactions with optional filters"
+    },
+    {
+      "name": "create_split_rule",
+      "description": "Create a split rule for distributing payments between sellers"
+    },
+    {
+      "name": "create_seller",
+      "description": "Create a seller (individual or business) in the marketplace"
+    },
+    {
+      "name": "get_seller",
+      "description": "Get seller details by ID"
+    },
+    {
+      "name": "list_sellers",
+      "description": "List sellers in the marketplace"
+    },
+    {
+      "name": "create_buyer",
+      "description": "Create a buyer in the marketplace"
+    },
+    {
+      "name": "get_balance",
+      "description": "Get balance for a seller or the marketplace"
+    },
+    {
+      "name": "create_transfer",
+      "description": "Create a transfer to a seller's bank account"
+    },
+    {
+      "name": "refund_transaction",
+      "description": "Refund a transaction (full or partial)"
+    },
+    {
+      "name": "get_receivables",
+      "description": "Get receivables for a transaction"
+    },
+    {
+      "name": "create_token_card",
+      "description": "Tokenize a credit card for secure payments"
+    },
+    {
+      "name": "create_bank_account",
+      "description": "Create a bank account token for a seller"
+    },
+    {
+      "name": "get_seller_balance",
+      "description": "Get detailed balance for a specific seller"
+    },
+    {
+      "name": "update_seller",
+      "description": "Update seller information"
+    },
+    {
+      "name": "list_transfers",
+      "description": "List marketplace transfers with filters"
+    },
+    {
+      "name": "get_transfer",
+      "description": "Get transfer details by ID"
+    },
+    {
+      "name": "create_subscription",
+      "description": "Create a recurring subscription"
+    },
+    {
+      "name": "list_receivables",
+      "description": "List all receivables for the marketplace"
+    }
+  ]
+}
