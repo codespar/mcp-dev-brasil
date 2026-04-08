@@ -1,22 +1,24 @@
 <p align="center">
   <h1 align="center">MCP Dev Brasil 🇧🇷</h1>
   <p align="center">
-    <strong>Every API your AI agent needs to run a business in Brazil.</strong>
+    <strong>Every API your AI agent needs to run a business in Brazil.</strong><br>
+    <em>Plus the agentic payment protocols to bridge them all.</em>
   </p>
   <p align="center">
-    33 MCP servers · ~340 tools · 8 verticals · MIT License
+    36 MCP servers · ~380 tools · 9 verticals · MIT License
   </p>
   <p align="center">
     <a href="https://codespar.dev/mcp">Landing Page</a> ·
     <a href="#quick-start">Quick Start</a> ·
+    <a href="#agentic-payment-protocols">Agentic Protocols</a> ·
     <a href="#the-complete-loop">The Complete Loop</a> ·
     <a href="#servers">All Servers</a> ·
     <a href="docs/CONTRIBUTING.md">Contribute</a>
   </p>
   <p align="center">
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-    <img src="https://img.shields.io/badge/servers-33-green" alt="33 servers">
-    <img src="https://img.shields.io/badge/tools-~340-orange" alt="~340 tools">
+    <img src="https://img.shields.io/badge/servers-36-green" alt="36 servers">
+    <img src="https://img.shields.io/badge/tools-~380-orange" alt="~380 tools">
     <img src="https://img.shields.io/badge/MCP-compatible-purple" alt="MCP compatible">
   </p>
 </p>
@@ -27,11 +29,13 @@
 
 AI agents can write code, analyze data, and chat. But they can't **operate a business** — collect payments, issue invoices, ship products, or notify customers. Especially not in Brazil, where every service has its own API, auth pattern, and quirks.
 
-**No MCP servers existed for most Brazilian commercial services.** Until now.
+Meanwhile, five categories of agentic payment infrastructure are shipping in parallel — checkout protocols, authorization layers, micropayment rails, identity frameworks, and issuing tools — and **none of them compose cleanly**.
+
+**MCP Dev Brasil bridges both gaps.** Traditional Brazilian services + the new agentic payment protocols, all accessible through a single MCP interface.
 
 ## The Solution
 
-MCP Brasil gives AI agents typed tools to interact with Brazilian APIs. Each server wraps a real service — payments, fiscal, logistics, messaging, banking, ERP — so your agent can operate a complete business workflow.
+MCP Brasil gives AI agents typed tools to interact with Brazilian APIs and agentic payment protocols. Each server wraps a real service — payments, fiscal, logistics, messaging, banking, ERP, crypto, and now **agentic protocols** — so your agent can operate a complete business workflow.
 
 ```
 🛒 Customer places order
@@ -47,6 +51,45 @@ MCP Brasil gives AI agents typed tools to interact with Brazilian APIs. Each ser
 
 ---
 
+## Agentic Payment Protocols
+
+> _"The bridge looks more like middleware than a protocol."_ — The middleware is MCP.
+
+Three new servers that bridge the emerging agentic payment stack:
+
+| Protocol | Server | Tools | What it does |
+|----------|--------|-------|-------------|
+| **[Stripe ACP](packages/payments/stripe-acp)** | `@codespar/mcp-stripe-acp` | 16 | Agentic Commerce Protocol — AI agent checkout, payment delegation, products, invoices. Live in ChatGPT with 1M+ Shopify merchants. |
+| **[x402](packages/crypto/x402)** | `@codespar/mcp-x402` | 10 | HTTP-native micropayments by Coinbase — when an agent hits a 402, it pays USDC on Base/Solana and retries. Pure HTTP, no checkout UI. |
+| **[AP2](packages/payments/ap2)** | `@codespar/mcp-ap2` | 13 | Google's Agent-to-Agent Payment Protocol — authorization, audit trails, scoped spend limits. 60+ partners including Visa, Mastercard, Stripe, PayPal. |
+
+### Why this matters
+
+```
+Agent needs to buy something
+  ├── Retail checkout?     → Stripe ACP (create_checkout → complete_checkout)
+  ├── API micropayment?    → x402 (pay_request → USDC $0.001 → data returned)
+  ├── Agent-to-agent?      → AP2 (authorize_payment → execute_payment)
+  └── Brazilian merchant?  → Asaas / Zoop / PagSeguro (traditional rails)
+
+All via MCP. Same interface. One agent.
+```
+
+### Quick Start — Agentic Protocols
+
+```bash
+# Stripe ACP — agentic checkout (test mode, free)
+npx @codespar/mcp-stripe-acp
+
+# x402 — HTTP micropayments (testnet, free)
+npx @codespar/mcp-x402
+
+# AP2 — agent authorization (early access)
+npx @codespar/mcp-ap2
+```
+
+---
+
 ## Quick Start
 
 ### With Claude Desktop
@@ -56,6 +99,13 @@ Add to `~/.config/claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
+    "stripe-acp": {
+      "command": "npx",
+      "args": ["-y", "@codespar/mcp-stripe-acp"],
+      "env": {
+        "STRIPE_API_KEY": "sk_test_..."
+      }
+    },
     "zoop": {
       "command": "npx",
       "args": ["-y", "@codespar/mcp-zoop"],
@@ -71,13 +121,16 @@ Add to `~/.config/claude/claude_desktop_config.json`:
 ### With any MCP client
 
 ```bash
-npx @codespar/mcp-zoop          # Payments (marketplace, split)
-npx @codespar/mcp-nuvem-fiscal  # Fiscal
-npx @codespar/mcp-melhor-envio  # Logistics
-npx @codespar/mcp-z-api         # WhatsApp
-npx @codespar/mcp-omie          # ERP
-npx @codespar/mcp-stark-bank    # Banking
-npx @codespar/mcp-dev-brasil-api    # CEP, CNPJ (no key needed!)
+npx @codespar/mcp-stripe-acp   # Agentic Commerce Protocol
+npx @codespar/mcp-x402         # HTTP micropayments
+npx @codespar/mcp-ap2          # Agent authorization
+npx @codespar/mcp-zoop         # Payments (marketplace, split)
+npx @codespar/mcp-nuvem-fiscal # Fiscal
+npx @codespar/mcp-melhor-envio # Logistics
+npx @codespar/mcp-z-api        # WhatsApp
+npx @codespar/mcp-omie         # ERP
+npx @codespar/mcp-stark-bank   # Banking
+npx @codespar/mcp-dev-brasil-api   # CEP, CNPJ (no key needed!)
 ```
 
 ### Try it now (no API key)
@@ -111,7 +164,15 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 
 ## Servers
 
-### 💳 Payments (12 servers)
+### ⚡ Agentic Protocols (3 servers)
+
+| Server | Tools | Description | Auth |
+|--------|-------|-------------|------|
+| **[Stripe ACP](packages/payments/stripe-acp)** | 16 | Agentic Commerce Protocol — checkout sessions, payment delegation, products, invoices | Stripe API Key |
+| **[x402](packages/crypto/x402)** | 10 | HTTP micropayments — USDC on Base/Solana, paywalls, machine-to-machine | Facilitator Key |
+| **[AP2](packages/payments/ap2)** | 13 | Agent authorization, audit trails, scoped spend limits | AP2 API Key |
+
+### 💳 Payments (13 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
@@ -127,6 +188,7 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 | **[Cielo](packages/payments/cielo)** | 8 | Credit card, debit, boleto, recurrent payments | Merchant Key |
 | **[Stone](packages/payments/stone)** | 8 | Open banking, payments, Pix, transfers | OAuth2 |
 | **[Celcoin](packages/payments/celcoin)** | 8 | Pix, boleto, transfers, bill payments, top-ups | OAuth2 |
+| **[AP2](packages/payments/ap2)** | 13 | Google's Agent-to-Agent Payment Protocol | AP2 API Key |
 
 ### 📄 Fiscal (3 servers)
 
@@ -175,10 +237,11 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 | **[Bling](packages/erp/bling)** | 10 | ERP, products, orders, invoices, stock management | OAuth2 |
 | **[Tiny](packages/erp/tiny)** | 10 | ERP, products, orders, invoices, stock, accounts payable | API Token |
 
-### 🪙 Crypto / Stablecoins (4 servers)
+### 🪙 Crypto / Stablecoins (5 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
+| **[x402](packages/crypto/x402)** | 10 | HTTP micropayments — USDC on Base/Solana | Facilitator Key |
 | **[UnblockPay](packages/crypto/unblockpay)** | 10 | Fiat-to-stablecoin onramp/offramp, wallets, transfers | API Key |
 | **[Circle](packages/crypto/circle)** | 10 | USDC payments, wallets, payouts, transfers | API Key |
 | **[Mercado Bitcoin](packages/crypto/mercado-bitcoin)** | 10 | Brazilian crypto exchange, trading, orderbook, withdrawals | API Key + Secret |
@@ -186,7 +249,7 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 
 ### 🔜 Coming Soon
 
-Foxbit · BRLA · PagBrasil · Juno · NFe.io · PlugNotas · Movidesk · Infobip · Frenet · Loggi · Kangu · Inter · Nubank · ReceitaWS · BigDataCorp · Sankhya · Totvs
+Foxbit · BRLA · Coinbase · Transak · PagBrasil · Juno · NFe.io · PlugNotas · Movidesk · Infobip · Frenet · Loggi · Kangu · Inter · Nubank · ReceitaWS · BigDataCorp · Sankhya · Totvs
 
 ---
 
@@ -199,7 +262,7 @@ AI Agent (Claude, ChatGPT, Cursor)
     ↕
 MCP Server (this repo)
     ↕
-Brazilian API (Zoop, Nuvem Fiscal, etc.)
+Brazilian API / Agentic Protocol (Stripe ACP, x402, Zoop, etc.)
 ```
 
 Each MCP server in this repo:
@@ -216,7 +279,7 @@ Each MCP server in this repo:
 
 The MCP Generator in CodeSpar Enterprise can automatically generate MCP servers from API specifications — that's how this repo was bootstrapped.
 
-**Individual MCP servers are useful. Orchestrating many with governance is powerful.** That's what CodeSpar does.
+**Individual MCP servers are useful. Orchestrating many with governance is powerful.** That's what CodeSpar does — including a [Payment Gateway](https://codespar.dev/enterprise) that integrates policy engine, payment routing, and mandate authorization across all rails.
 
 ---
 
