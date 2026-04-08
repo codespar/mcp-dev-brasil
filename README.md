@@ -64,6 +64,41 @@ Three new servers that bridge the emerging agentic payment stack:
 | **[x402](packages/crypto/x402)** | `@codespar/mcp-x402` | 10 | HTTP-native micropayments by Coinbase — when an agent hits a 402, it pays USDC on Base/Solana and retries. Pure HTTP, no checkout UI. |
 | **[AP2](packages/payments/ap2)** | `@codespar/mcp-ap2` | 13 | Google's Agent-to-Agent Payment Protocol — authorization, audit trails, scoped spend limits. 60+ partners including Visa, Mastercard, Stripe, PayPal. |
 
+### The Autonomy Spectrum
+
+Each protocol sits at a different level of agent autonomy:
+
+```
+ Human-in-loop ◄──────────────────────────────► Fully autonomous
+
+  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
+  │   ACP   │   │   UCP   │   │   AP2   │   │   x402  │
+  │ Stripe  │   │ Google  │   │ Google  │   │Coinbase │
+  └─────────┘   └─────────┘   └─────────┘   └─────────┘
+  User confirms   Commerce     User sets      No user.
+  every purchase  lifecycle    rules, agent   Machine-to-
+  in-chat         managed      acts within    machine at
+                  by agent     budget/scope   HTTP layer
+```
+
+### The Convergence Stack
+
+These protocols aren't competing — they're converging into layers:
+
+```
+┌─────────────────────────────────────────────┐
+│  Application Layer        ACP / UCP         │  Chat UX, product discovery
+├─────────────────────────────────────────────┤
+│  Authorization Layer      AP2 / Mandates    │  Spend limits, audit trails
+├─────────────────────────────────────────────┤
+│  Tool Layer               MCP  ◄── WE ARE  │  Standardized agent tools
+├─────────────────────────────────────────────┤
+│  Settlement Layer         x402 / Pix / Card │  On-chain or traditional rails
+└─────────────────────────────────────────────┘
+```
+
+**CodeSpar sits at the Tool Layer** — the middleware that connects every application, authorization, and settlement protocol through one interface.
+
 ### Why this matters
 
 ```
