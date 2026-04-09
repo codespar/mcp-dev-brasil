@@ -1,6 +1,6 @@
 {
   "name": "io.github.codespar/mcp-brasil-api",
-  "description": "CEP, CNPJ, banks, holidays, FIPE, DDD \u2014 BrasilAPI (free, no key)",
+  "description": "CEP, CNPJ, banks, holidays, FIPE, DDD — BrasilAPI (free, no key)",
   "repository": {
     "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/identity/brasil-api"
   },
@@ -58,6 +58,26 @@
     {
       "name": "get_cptec_weather",
       "description": "Get weather forecast for a city (CPTEC/INPE)"
+    },
+    {
+      "name": "get_pix_participants",
+      "description": "get pix participants"
+    },
+    {
+      "name": "get_domain_info",
+      "description": "get domain info"
+    },
+    {
+      "name": "get_ibge_municipalities",
+      "description": "get ibge municipalities"
+    },
+    {
+      "name": "get_tax_rates",
+      "description": "get tax rates"
+    },
+    {
+      "name": "get_cptec_cities",
+      "description": "get cptec cities"
     }
   ]
 }

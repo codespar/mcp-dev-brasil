@@ -1,6 +1,6 @@
 {
   "name": "io.github.codespar/mcp-nuvem-fiscal",
-  "description": "NFe/NFSe/NFCe emission, CNPJ/CEP lookup \u2014 Nuvem Fiscal API",
+  "description": "NFe/NFSe/NFCe emission, CNPJ/CEP lookup — Nuvem Fiscal API",
   "repository": {
     "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/fiscal/nuvem-fiscal"
   },
@@ -32,7 +32,7 @@
   "tools": [
     {
       "name": "create_nfe",
-      "description": "Create a NF-e (nota fiscal eletr\u00f4nica)"
+      "description": "Create a NF-e (nota fiscal eletrônica)"
     },
     {
       "name": "get_nfe",
@@ -44,7 +44,7 @@
     },
     {
       "name": "create_nfse",
-      "description": "Create a NFS-e (nota fiscal de servi\u00e7o eletr\u00f4nica)"
+      "description": "Create a NFS-e (nota fiscal de serviço eletrônica)"
     },
     {
       "name": "get_nfse",
@@ -56,7 +56,7 @@
     },
     {
       "name": "create_nfce",
-      "description": "Create a NFC-e (nota fiscal de consumidor eletr\u00f4nica)"
+      "description": "Create a NFC-e (nota fiscal de consumidor eletrônica)"
     },
     {
       "name": "consult_cnpj",
@@ -69,6 +69,26 @@
     {
       "name": "register_company",
       "description": "Register a company in Nuvem Fiscal"
+    },
+    {
+      "name": "create_cte",
+      "description": "create cte"
+    },
+    {
+      "name": "get_cte",
+      "description": "get cte"
+    },
+    {
+      "name": "cancel_cte",
+      "description": "cancel cte"
+    },
+    {
+      "name": "create_mdfe",
+      "description": "create mdfe"
+    },
+    {
+      "name": "get_nfe_events",
+      "description": "get nfe events"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "io.github.codespar/mcp-asaas",
-  "description": "Billing automation, Pix, boleto, subscriptions \u2014 Asaas API",
+  "description": "Billing automation, Pix, boleto, subscriptions — Asaas API",
   "repository": {
     "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/payments/asaas"
   },
@@ -65,6 +65,26 @@
     {
       "name": "get_balance",
       "description": "Get current account balance"
+    },
+    {
+      "name": "list_subscriptions",
+      "description": "list subscriptions"
+    },
+    {
+      "name": "cancel_subscription",
+      "description": "cancel subscription"
+    },
+    {
+      "name": "get_webhook_events",
+      "description": "get webhook events"
+    },
+    {
+      "name": "create_subaccount",
+      "description": "create subaccount"
+    },
+    {
+      "name": "get_installments",
+      "description": "get installments"
     },
     {
       "name": "create_transfer",
