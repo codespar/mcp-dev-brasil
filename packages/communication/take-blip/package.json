@@ -26,5 +26,6 @@
     "messaging",
     "whatsapp",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-take-blip"
 }

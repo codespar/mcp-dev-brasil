@@ -26,5 +26,6 @@
     "subscriptions",
     "billing",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-vindi"
 }

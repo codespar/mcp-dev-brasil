@@ -26,5 +26,6 @@
     "invoices",
     "subscriptions",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-iugu"
 }

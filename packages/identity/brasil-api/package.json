@@ -27,5 +27,6 @@
     "cnpj",
     "fipe",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-brasil-api"
 }

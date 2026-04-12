@@ -27,5 +27,6 @@
     "orders",
     "customers",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-omie"
 }

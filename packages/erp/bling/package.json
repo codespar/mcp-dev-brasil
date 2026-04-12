@@ -26,5 +26,6 @@
     "invoices",
     "stock",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-bling"
 }

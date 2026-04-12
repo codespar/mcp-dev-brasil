@@ -26,5 +26,6 @@
     "exchange",
     "trading",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-mercado-bitcoin"
 }

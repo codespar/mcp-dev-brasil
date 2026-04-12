@@ -26,5 +26,6 @@
     "fiscal",
     "invoicing",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-conta-azul"
 }

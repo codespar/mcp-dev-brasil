@@ -26,5 +26,6 @@
     "crypto",
     "stablecoin",
     "payments"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-circle"
 }

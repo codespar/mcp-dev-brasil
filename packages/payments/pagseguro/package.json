@@ -27,5 +27,6 @@
     "pix",
     "boleto",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-pagseguro"
 }

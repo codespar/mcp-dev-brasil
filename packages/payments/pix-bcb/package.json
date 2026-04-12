@@ -26,5 +26,6 @@
     "banco-central",
     "payments",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-pix-bcb"
 }

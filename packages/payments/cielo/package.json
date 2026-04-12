@@ -26,5 +26,6 @@
     "credit-card",
     "boleto",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-cielo"
 }

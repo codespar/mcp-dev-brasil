@@ -26,5 +26,6 @@
     "tracking",
     "cep",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-correios"
 }

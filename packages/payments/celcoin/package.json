@@ -26,5 +26,6 @@
     "boleto",
     "payments",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-celcoin"
 }

@@ -26,5 +26,6 @@
     "pix",
     "payments",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-efi"
 }

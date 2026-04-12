@@ -26,5 +26,6 @@
     "shipping",
     "tracking",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-melhor-envio"
 }

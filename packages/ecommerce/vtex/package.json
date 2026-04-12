@@ -26,5 +26,6 @@
     "orders",
     "products",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-vtex"
 }

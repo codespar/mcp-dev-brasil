@@ -26,5 +26,6 @@
     "payments",
     "pix",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-pagar-me"
 }

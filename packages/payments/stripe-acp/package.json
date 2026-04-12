@@ -7,7 +7,9 @@
   "bin": {
     "mcp-stripe-acp": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -29,5 +31,6 @@
     "payment-delegation",
     "ai-agent",
     "agent-commerce-protocol"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-stripe-acp"
 }

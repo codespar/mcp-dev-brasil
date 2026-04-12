@@ -25,5 +25,6 @@
     "payments",
     "cross-border",
     "brazil"
-  ]
+  ],
+  "mcpName": "io.github.codespar/mcp-ebanx"
 }
