@@ -1,0 +1,25 @@
+{
+  "name": "@codespar/mcp-inter-bank",
+  "version": "0.1.0",
+  "description": "MCP server for Banco Inter — digital bank, boleto, PIX, statements, transfers",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-inter-bank": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": ["inter","banking","brazil","pix","boleto","digital-bank",  "mcp"],
+  "mcpName": "io.github.codespar/mcp-inter-bank"
+}

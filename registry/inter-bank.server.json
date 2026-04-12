@@ -1,0 +1,23 @@
+{
+  "name": "io.github.codespar/mcp-inter-bank",
+  "description": "Banco Inter — digital bank, boleto, PIX, statements, transfers",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/payments/inter-bank"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-04-12",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-inter-bank",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "INTER_CLIENT_ID", "description": "API token for inter-bank", "required": true }
+      ]
+    }
+  ]
+}

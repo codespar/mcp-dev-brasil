@@ -1,0 +1,25 @@
+{
+  "name": "@codespar/mcp-mercado-libre",
+  "version": "0.1.0",
+  "description": "MCP server for Mercado Libre — LATAM marketplace, product search, orders, sellers",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-mercado-libre": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": ["mercado-libre","marketplace","latam","argentina","brazil","e-commerce",  "mcp"],
+  "mcpName": "io.github.codespar/mcp-mercado-libre"
+}

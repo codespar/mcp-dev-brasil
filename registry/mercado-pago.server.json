@@ -1,0 +1,23 @@
+{
+  "name": "io.github.codespar/mcp-mercado-pago",
+  "description": "Mercado Pago — payments, checkout, PIX, refunds for LATAM",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil/tree/main/packages/payments/mercado-pago"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-04-12",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-mercado-pago",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "MERCADO_PAGO_ACCESS_TOKEN", "description": "API token for mercado-pago", "required": true }
+      ]
+    }
+  ]
+}
