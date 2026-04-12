@@ -1,0 +1,25 @@
+{
+  "name": "@codespar/mcp-skydropx",
+  "version": "0.1.0",
+  "description": "MCP server for Skydropx — Mexican multi-carrier shipping aggregator",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-skydropx": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": ["skydropx", "shipping", "mexico", "estafeta", "dhl", "fedex", "redpack", "mcp"],
+  "mcpName": "io.github.codespar/mcp-skydropx"
+}

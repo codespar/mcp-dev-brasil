@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-belvo",
+  "description": "Belvo — Open Finance aggregator for LATAM",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam",
+    "source": "github",
+    "subfolder": "packages/mexico/belvo"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-belvo",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "BELVO_SECRET_ID",
+          "description": "Secret ID for Belvo",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BELVO_SECRET_PASSWORD",
+          "description": "Secret password for Belvo",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BELVO_SANDBOX",
+          "description": "Set to true to use sandbox environment",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

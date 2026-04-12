@@ -1,0 +1,25 @@
+{
+  "name": "@codespar/mcp-bind-erp",
+  "version": "0.1.0",
+  "description": "MCP server for Bind ERP — Mexican cloud ERP",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-bind-erp": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": ["bind", "erp", "mexico", "invoicing", "inventory", "accounting", "mcp"],
+  "mcpName": "io.github.codespar/mcp-bind-erp"
+}
