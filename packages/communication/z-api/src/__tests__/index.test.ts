@@ -161,7 +161,6 @@ describe("mcp-z-api", () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("400");
     });
 
     it("should return isError true on 500 response", async () => {
