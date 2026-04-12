@@ -289,9 +289,49 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 | **[Mercado Bitcoin](packages/crypto/mercado-bitcoin)** | 10 | Brazilian crypto exchange, trading, orderbook, withdrawals | API Key + Secret |
 | **[Bitso](packages/crypto/bitso)** | 10 | Latin American crypto exchange, trading, funding, withdrawals | API Key + Secret |
 
+### 🌎 LATAM-Wide (4 servers)
+
+| Server | Tools | Description | Auth |
+|--------|-------|-------------|------|
+| **[Mercado Libre](packages/payments/mercado-libre)** | 14 | LATAM marketplace (18 countries) — products, orders, sellers, shipments | OAuth2 |
+| **[Mercado Pago](packages/payments/mercado-pago)** | 12 | LATAM payments — cards, PIX, checkout, refunds | Bearer Token |
+| **[Nubank](packages/payments/nubank)** | 10 | Brazilian neobank via Open Finance — accounts, PIX, transactions | OAuth2 |
+| **[Banco Inter](packages/payments/inter-bank)** | 12 | Brazilian digital bank — boleto, PIX, statements, transfers | OAuth2 |
+
+### 🇲🇽 Mexico (6 servers)
+
+| Server | Tools | Description | Auth |
+|--------|-------|-------------|------|
+| **[Conekta](packages/mexico/conekta)** | 10 | Payment gateway — cards, OXXO cash, SPEI | Basic Auth |
+| **[FacturAPI](packages/mexico/facturapi)** | 10 | CFDI e-invoicing (Mexican NFe) | Bearer Token |
+| **[STP/SPEI](packages/mexico/stp-spei)** | 8 | Instant bank transfers (Mexico's PIX) | API Key |
+| **[Skydropx](packages/mexico/skydropx)** | 10 | Multi-carrier shipping (Estafeta, DHL, FedEx) | Bearer Token |
+| **[Bind ERP](packages/mexico/bind-erp)** | 10 | Cloud ERP | API Key |
+| **[Belvo](packages/mexico/belvo)** | 10 | Open Finance aggregator (MX/AR/CO) | Basic Auth |
+
+### 🇦🇷 Argentina (5 servers)
+
+| Server | Tools | Description | Auth |
+|--------|-------|-------------|------|
+| **[AFIP](packages/argentina/afip)** | 8 | Electronic invoicing (Factura Electrónica) | Certificate |
+| **[Andreani](packages/argentina/andreani)** | 8 | Logistics/courier (largest in Argentina) | JWT |
+| **[Colppy](packages/argentina/colppy)** | 8 | Cloud accounting + AFIP invoicing | API Key |
+| **[Tienda Nube](packages/argentina/tienda-nube)** | 10 | E-commerce platform (LATAM Shopify) | Bearer Token |
+| **[BCRA](packages/argentina/bcra)** | 6 | Central Bank public data (exchange rates, free) | **None** (free) |
+
+### 🇨🇴 Colombia (5 servers)
+
+| Server | Tools | Description | Auth |
+|--------|-------|-------------|------|
+| **[Wompi](packages/colombia/wompi)** | 10 | Payment gateway by Bancolombia (cards, PSE, Nequi) | Bearer Token |
+| **[Siigo](packages/colombia/siigo)** | 10 | Accounting + DIAN e-invoicing | Bearer Token |
+| **[Nequi](packages/colombia/nequi)** | 6 | Digital wallet (50M+ users) | OAuth2 |
+| **[Coordinadora](packages/colombia/coordinadora)** | 8 | Logistics/courier | API Key |
+| **[Alegra](packages/colombia/alegra)** | 10 | Cloud accounting (cross-LATAM) | Basic Auth |
+
 ### 🔜 Coming Soon
 
-Foxbit · BRLA · Coinbase · Transak · PagBrasil · Juno · NFe.io · PlugNotas · Movidesk · Infobip · Frenet · Loggi · Kangu · Inter · Nubank · ReceitaWS · BigDataCorp · Sankhya · Totvs
+Foxbit · BRLA · Coinbase · Transak · PagBrasil · Juno · NFe.io · PlugNotas · Movidesk · Infobip · Frenet · Loggi · Kangu · ReceitaWS · BigDataCorp · Sankhya · Totvs · Clip (MX) · Contpaqi (MX) · Ualá (AR) · Naranja X (AR) · Transbank (CL) · Nequi (CO expanded) · Rappi (CO)
 
 ---
 
