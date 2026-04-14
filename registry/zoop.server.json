@@ -109,6 +109,38 @@
     {
       "name": "list_receivables",
       "description": "List all receivables for the marketplace"
+    },
+    {
+      "name": "create_pix_payment",
+      "description": "Create a PIX payment transaction"
+    },
+    {
+      "name": "get_pix_payment",
+      "description": "Get PIX payment details including QR code and copy-paste payload"
+    },
+    {
+      "name": "cancel_subscription",
+      "description": "Cancel a recurring subscription"
+    },
+    {
+      "name": "list_subscriptions",
+      "description": "List subscriptions in the marketplace"
+    },
+    {
+      "name": "list_disputes",
+      "description": "List disputes/chargebacks in the marketplace"
+    },
+    {
+      "name": "get_marketplace",
+      "description": "Get marketplace information and settings"
+    },
+    {
+      "name": "get_dispute",
+      "description": "Get dispute details by ID"
+    },
+    {
+      "name": "get_subscription",
+      "description": "Get subscription details by ID"
     }
   ]
 }

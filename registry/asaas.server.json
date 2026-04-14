@@ -89,6 +89,42 @@
     {
       "name": "create_transfer",
       "description": "Create a bank transfer (Pix out or TED)"
+    },
+    {
+      "name": "create_pix_qrcode",
+      "description": "Generate a static PIX QR code for receiving payments"
+    },
+    {
+      "name": "list_transfers",
+      "description": "List transfers with optional filters"
+    },
+    {
+      "name": "create_notification",
+      "description": "Create a webhook notification configuration"
+    },
+    {
+      "name": "list_notifications",
+      "description": "List webhook notification configurations"
+    },
+    {
+      "name": "get_customer",
+      "description": "Get customer details by ID"
+    },
+    {
+      "name": "update_payment",
+      "description": "Update a pending payment"
+    },
+    {
+      "name": "delete_payment",
+      "description": "Delete a payment by ID"
+    },
+    {
+      "name": "refund_payment",
+      "description": "Refund a received payment"
+    },
+    {
+      "name": "get_subscription",
+      "description": "Get subscription details by ID"
     }
   ]
 }

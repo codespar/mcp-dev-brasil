@@ -5,7 +5,7 @@
     <em>Brazil 🇧🇷 · Mexico 🇲🇽 · Argentina 🇦🇷 · Colombia 🇨🇴 — plus 4 agentic payment protocols.</em>
   </p>
   <p align="center">
-    57 MCP servers · ~700 tools · 4 countries · MIT License
+    57 MCP servers · 453 tools · 4 countries · MIT License
   </p>
   <p align="center">
     <a href="https://codespar.dev/mcp">Landing Page</a> ·
@@ -18,7 +18,7 @@
   <p align="center">
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
     <img src="https://img.shields.io/badge/servers-57-green" alt="57 servers">
-    <img src="https://img.shields.io/badge/tools-~700-orange" alt="~700 tools">
+    <img src="https://img.shields.io/badge/tools-453-orange" alt="453 tools">
     <img src="https://img.shields.io/badge/countries-4-blue" alt="4 countries">
     <img src="https://img.shields.io/badge/MCP-compatible-purple" alt="MCP compatible">
   </p>
@@ -209,7 +209,7 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[Google UCP](packages/payments/ucp)** | 21 | Universal Commerce Protocol — shopping, cart, checkout, orders, delivery, identity | UCP API Key |
+| **[Google UCP](packages/payments/ucp)** | 20 | Universal Commerce Protocol — shopping, cart, checkout, orders, delivery, identity | UCP API Key |
 | **[Stripe ACP](packages/payments/stripe-acp)** | 16 | Agentic Commerce Protocol — checkout sessions, payment delegation, products, invoices | Stripe API Key |
 | **[x402](packages/crypto/x402)** | 10 | HTTP micropayments — USDC on Base/Solana, paywalls, machine-to-machine | Facilitator Key |
 | **[AP2](packages/payments/ap2)** | 13 | Agent authorization, audit trails, scoped spend limits | AP2 API Key |
@@ -218,16 +218,16 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[Asaas](packages/payments/asaas)** | 10 | Billing, Pix, boleto, subscriptions, transfers | API Key |
-| **[PagSeguro](packages/payments/pagseguro)** | 10 | Orders, charges, Pix QR, refunds | Bearer Token |
+| **[Asaas](packages/payments/asaas)** | 24 | Billing, Pix, boleto, subscriptions, transfers, refunds, notifications | API Key |
+| **[PagSeguro](packages/payments/pagseguro)** | 13 | Orders, charges, Pix QR, refunds, subscriptions, splits | Bearer Token |
 | **[iugu](packages/payments/iugu)** | 8 | Invoices, subscriptions, payment methods | Basic Auth |
 | **[Pix BCB](packages/payments/pix-bcb)** | 8 | Official Central Bank Pix API (cob, DICT) | OAuth2 + mTLS |
-| **[Zoop](packages/payments/zoop)** | 20 | Marketplace payments, split rules, sellers, subscriptions | Basic Auth |
+| **[Zoop](packages/payments/zoop)** | 28 | Marketplace payments, split rules, sellers, subscriptions, disputes, Pix | Basic Auth |
 | **[Pagar.me](packages/payments/pagar-me)** | 10 | Orders, charges, recipients, transfers | Basic Auth |
 | **[EBANX](packages/payments/ebanx)** | 7 | Cross-border payments, payouts, FX rates | Integration Key |
 | **[EFÍ/Gerencianet](packages/payments/efi)** | 8 | Pix, boleto, carnet, open finance | OAuth2 |
 | **[Vindi](packages/payments/vindi)** | 10 | Recurring billing, subscriptions, invoices | API Key |
-| **[Cielo](packages/payments/cielo)** | 8 | Credit card, debit, boleto, recurrent payments | Merchant Key |
+| **[Cielo](packages/payments/cielo)** | 13 | Credit card, debit, boleto, Pix, recurrent payments | Merchant Key |
 | **[Stone](packages/payments/stone)** | 8 | Open banking, payments, Pix, transfers | OAuth2 |
 | **[Celcoin](packages/payments/celcoin)** | 8 | Pix, boleto, transfers, bill payments, top-ups | OAuth2 |
 | **[AP2](packages/payments/ap2)** | 13 | Google's Agent-to-Agent Payment Protocol | AP2 API Key |
@@ -237,14 +237,14 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
 | **[Focus NFe](packages/fiscal/focus-nfe)** | 8 | NFe/NFSe/NFCe emission and management | Basic Auth |
-| **[Nuvem Fiscal](packages/fiscal/nuvem-fiscal)** | 10 | NFe/NFSe/NFCe, CNPJ/CEP lookup | OAuth2 |
+| **[Nuvem Fiscal](packages/fiscal/nuvem-fiscal)** | 15 | NFe/NFSe/NFCe/CTe/MDFe, CNPJ/CEP lookup | OAuth2 |
 | **[Conta Azul](packages/fiscal/conta-azul)** | 10 | Accounting, invoicing, customers, products | OAuth2 |
 
 ### 📱 Communication (5 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[Evolution API](packages/communication/evolution-api)** | 10 | WhatsApp automation (Baileys) | API Key |
+| **[Evolution API](packages/communication/evolution-api)** | 15 | WhatsApp automation (Baileys) | API Key |
 | **[Z-API](packages/communication/z-api)** | 20 | WhatsApp messaging, contacts, groups, labels | Instance + Token |
 | **[Zenvia](packages/communication/zenvia)** | 8 | Multichannel (SMS, WhatsApp, RCS) | API Token |
 | **[RD Station](packages/communication/rd-station)** | 8 | Marketing automation, CRM, leads | Bearer Token |
@@ -254,13 +254,13 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[BrasilAPI](packages/identity/brasil-api)** | 10 | CEP, CNPJ, banks, holidays, FIPE, DDD, weather | **None** (free) |
+| **[BrasilAPI](packages/identity/brasil-api)** | 15 | CEP, CNPJ, banks, holidays, FIPE, DDD, IBGE, SELIC, weather | **None** (free) |
 
 ### 🏦 Banking (2 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[Stark Bank](packages/banking/stark-bank)** | 10 | Transfers, boleto, invoices, Pix, balance | Access Token |
+| **[Stark Bank](packages/banking/stark-bank)** | 15 | Transfers, boleto, invoices, Pix, balance, brcode, deposits | Access Token |
 | **[Open Finance](packages/banking/open-finance)** | 8 | Open Finance Brasil — accounts, transactions, consents, investments | OAuth2 |
 
 ### 📦 E-commerce / Logistics (3 servers)
@@ -268,14 +268,14 @@ To orchestrate all 6 steps with governance, approval workflows, and audit trails
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
 | **[Melhor Envio](packages/ecommerce/melhor-envio)** | 18 | Shipping quotes, tracking, labels, cart, agencies | Bearer Token |
-| **[Correios](packages/ecommerce/correios)** | 6 | Tracking, shipping calc, CEP | OAuth |
-| **[VTEX](packages/ecommerce/vtex)** | 10 | E-commerce, orders, products, inventory, shipping | App Key + Token |
+| **[Correios](packages/ecommerce/correios)** | 11 | Tracking, shipping, collections, reverse logistics | OAuth |
+| **[VTEX](packages/ecommerce/vtex)** | 15 | E-commerce, orders, products, inventory, categories, shipping | App Key + Token |
 
 ### 📊 ERP (3 servers)
 
 | Server | Tools | Description | Auth |
 |--------|-------|-------------|------|
-| **[Omie](packages/erp/omie)** | 10 | Customers, products, orders, invoices, financials | App Key + Secret |
+| **[Omie](packages/erp/omie)** | 15 | Customers, products, orders, invoices, services, purchases | App Key + Secret |
 | **[Bling](packages/erp/bling)** | 10 | ERP, products, orders, invoices, stock management | OAuth2 |
 | **[Tiny](packages/erp/tiny)** | 10 | ERP, products, orders, invoices, stock, accounts payable | API Token |
 
