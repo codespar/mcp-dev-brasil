@@ -9,7 +9,7 @@
  * surface — the modern HATEOAS-driven API — not the legacy FIS/WPG XML
  * gateway, Disputes Direct, or Worldpay for Platforms.
  *
- * Tools (12):
+ * Tools (22):
  *   Verifications
  *     verify_account            POST /verifications/accounts
  *   Payments
@@ -19,12 +19,24 @@
  *     refund_payment            POST /payments/settlements/refunds/full  or  .../partials
  *     reverse_payment           POST /payments/reversals
  *     get_payment               GET  /payments/events/{eventId}
+ *     query_payment             GET  /payments/events?transactionReference=...
+ *     list_payment_events       GET  /payments/events?merchant.entity=...
  *   Tokens
  *     create_token              POST /tokens
+ *     get_token                 GET  /tokens/{tokenId}
+ *     update_token              PUT  /tokens/{tokenId}
  *     delete_token              DELETE /tokens/{tokenId}
+ *   3DS Authentication
+ *     lookup_3ds                POST /verifications/customers/3ds/deviceDataCollection
+ *     authenticate_3ds          POST /verifications/customers/3ds/authentication
+ *     challenge_3ds             POST /verifications/customers/3ds/challenge
  *   Disputes
+ *     get_dispute               GET  /disputes/{disputeId}
  *     accept_dispute            POST /disputes/{disputeId}/accepts
+ *     defend_dispute            POST /disputes/{disputeId}/defences
  *     submit_dispute_evidence   POST /disputes/{disputeId}/evidence
+ *   Reports
+ *     get_reconciliation_batch  GET  /reports/reconciliations/batches/{batchId}
  *   Fraud
  *     fraud_screen              POST /fraudsight/assessment
  *
@@ -92,6 +104,7 @@ const MEDIA_TYPES = {
   tokens: "application/vnd.worldpay.tokens-v3.hal+json",
   fraudsight: "application/vnd.worldpay.fraudsight-v1.hal+json",
   disputes: "application/vnd.worldpay.disputes-v1.hal+json",
+  reports: "application/vnd.worldpay.reports-v1.hal+json",
 } as const;
 
 type ApiFamily = keyof typeof MEDIA_TYPES;
@@ -139,7 +152,7 @@ function pathWithLink(base: string, linkData?: string): string {
 }
 
 const server = new Server(
-  { name: "mcp-worldpay", version: "0.1.0-alpha.1" },
+  { name: "mcp-worldpay", version: "0.2.0-alpha.1" },
   { capabilities: { tools: {} } },
 );
 
@@ -273,6 +286,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_token",
+      description: "Retrieve a stored card token's metadata (bin, scheme, last4, cardHolderName, expiryDate, etc.). Does not return the raw PAN.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          tokenId: { type: "string", description: "The token identifier returned by create_token" },
+        },
+        required: ["tokenId"],
+      },
+    },
+    {
+      name: "update_token",
+      description: "Update metadata on a stored card token (e.g. expiryDate after an account-updater refresh, cardHolderName, description).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          tokenId: { type: "string", description: "The token identifier returned by create_token" },
+          description: { type: "string", description: "New friendly description" },
+          tokenExpiryDateTime: { type: "string", description: "RFC-3339 expiration for the token itself" },
+          paymentInstrument: { type: "object", description: "Updated card fields (cardHolderName, expiryDate, billingAddress, etc.)" },
+        },
+        required: ["tokenId"],
+      },
+    },
+    {
       name: "delete_token",
       description: "Delete a stored card token.",
       inputSchema: {
@@ -281,6 +319,114 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           tokenId: { type: "string", description: "The token identifier returned by create_token" },
         },
         required: ["tokenId"],
+      },
+    },
+    {
+      name: "query_payment",
+      description: "Look up a payment by the merchant-side transactionReference you assigned on authorize_payment. Returns the matching payment event(s).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          transactionReference: { type: "string", description: "The merchant-side reference passed on authorize_payment" },
+        },
+        required: ["transactionReference"],
+      },
+    },
+    {
+      name: "list_payment_events",
+      description: "List recent payment events for the configured merchant entity. Useful for transaction reports and reconciliation.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          fromDate: { type: "string", description: "ISO-8601 lower bound (inclusive)" },
+          toDate: { type: "string", description: "ISO-8601 upper bound (exclusive)" },
+          pageSize: { type: "number", description: "Results per page" },
+          pageNumber: { type: "number", description: "Page number (1-based)" },
+        },
+      },
+    },
+    {
+      name: "lookup_3ds",
+      description: "Step 1 of 3DS2 — submit device-data-collection (DDC) output to Worldpay to determine whether a challenge is required. Returns either a frictionless result or a challenge lookup reference.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          transactionReference: { type: "string", description: "Unique merchant-side reference, typically the same as the eventual authorize_payment call" },
+          instruction: {
+            type: "object",
+            description: "3DS lookup payload — value, paymentInstrument (token or card), and any collected deviceData.",
+          },
+          channel: { type: "string", enum: ["ecom"], description: "3DS only applies to ecom" },
+          deviceData: { type: "object", description: "DDC output (browser fingerprint, collectionReference, etc.)" },
+        },
+        required: ["transactionReference", "instruction"],
+      },
+    },
+    {
+      name: "authenticate_3ds",
+      description: "Step 2 of 3DS2 — authenticate the cardholder. Returns either an authenticated payload (frictionless) or a challenge URL the user must complete. Pass the result into authorize_payment.customer.authentication.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          transactionReference: { type: "string", description: "Unique merchant-side reference" },
+          instruction: { type: "object", description: "Same shape as authorize_payment.instruction (value, paymentInstrument)" },
+          authentication: {
+            type: "object",
+            description: "3DS authentication request — typically { version: '2.2.0', channel: 'browser', challenge: { windowSize, preference, ... } }",
+          },
+          customer: { type: "object", description: "Customer risk data (email, phone, shippingAddress, account)" },
+          channel: { type: "string", enum: ["ecom"] },
+        },
+        required: ["transactionReference", "instruction", "authentication"],
+      },
+    },
+    {
+      name: "challenge_3ds",
+      description: "Step 3 of 3DS2 — post the CReq back after the issuer challenge window closes, to retrieve the final authentication outcome.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          transactionReference: { type: "string", description: "Unique merchant-side reference" },
+          challenge: {
+            type: "object",
+            description: "Challenge-result payload — typically { reference, transactionId, cres } returned from the issuer after challenge completion.",
+          },
+        },
+        required: ["transactionReference", "challenge"],
+      },
+    },
+    {
+      name: "get_dispute",
+      description: "Retrieve a dispute's current state, evidence requirements, deadlines, and HATEOAS action links.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          disputeId: { type: "string", description: "Worldpay dispute identifier" },
+        },
+        required: ["disputeId"],
+      },
+    },
+    {
+      name: "defend_dispute",
+      description: "Open a defence on a dispute — signals intent to defend before submit_dispute_evidence. Some reason codes require an explicit defence before evidence can be uploaded.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          disputeId: { type: "string", description: "Worldpay dispute identifier" },
+          reference: { type: "string", description: "Optional internal reference" },
+        },
+        required: ["disputeId"],
+      },
+    },
+    {
+      name: "get_reconciliation_batch",
+      description: "Retrieve a reconciliation batch (daily settlement file equivalent) — lists all settled transactions, fees, and net amount for a given batch.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          batchId: { type: "string", description: "Reconciliation batch identifier" },
+        },
+        required: ["batchId"],
       },
     },
     {
@@ -425,6 +571,88 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case "get_token": {
+        const tokenId = encodeURIComponent(String(a.tokenId ?? ""));
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("GET", `/tokens/${tokenId}`, undefined, "tokens"), null, 2) }],
+        };
+      }
+
+      case "update_token": {
+        const tokenId = encodeURIComponent(String(a.tokenId ?? ""));
+        const { tokenId: _ignored, ...rest } = a;
+        void _ignored;
+        const body = withEntity(rest as Record<string, unknown>);
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("PUT", `/tokens/${tokenId}`, body, "tokens"), null, 2) }],
+        };
+      }
+
+      case "query_payment": {
+        const ref = encodeURIComponent(String(a.transactionReference ?? ""));
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("GET", `/payments/events?transactionReference=${ref}`, undefined, "payments"), null, 2) }],
+        };
+      }
+
+      case "list_payment_events": {
+        const params = new URLSearchParams();
+        if (ENTITY) params.set("merchant.entity", ENTITY);
+        if (a.fromDate) params.set("fromDate", String(a.fromDate));
+        if (a.toDate) params.set("toDate", String(a.toDate));
+        if (a.pageSize !== undefined) params.set("pageSize", String(a.pageSize));
+        if (a.pageNumber !== undefined) params.set("pageNumber", String(a.pageNumber));
+        const qs = params.toString();
+        const path = qs ? `/payments/events?${qs}` : `/payments/events`;
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("GET", path, undefined, "payments"), null, 2) }],
+        };
+      }
+
+      case "lookup_3ds": {
+        const body = withEntity(a);
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("POST", "/verifications/customers/3ds/deviceDataCollection", body, "payments"), null, 2) }],
+        };
+      }
+
+      case "authenticate_3ds": {
+        const body = withEntity(a);
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("POST", "/verifications/customers/3ds/authentication", body, "payments"), null, 2) }],
+        };
+      }
+
+      case "challenge_3ds": {
+        const body = withEntity(a);
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("POST", "/verifications/customers/3ds/challenge", body, "payments"), null, 2) }],
+        };
+      }
+
+      case "get_dispute": {
+        const disputeId = encodeURIComponent(String(a.disputeId ?? ""));
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("GET", `/disputes/${disputeId}`, undefined, "disputes"), null, 2) }],
+        };
+      }
+
+      case "defend_dispute": {
+        const disputeId = encodeURIComponent(String(a.disputeId ?? ""));
+        const reference = a.reference as string | undefined;
+        const body = reference ? { reference } : undefined;
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("POST", `/disputes/${disputeId}/defences`, body, "disputes"), null, 2) }],
+        };
+      }
+
+      case "get_reconciliation_batch": {
+        const batchId = encodeURIComponent(String(a.batchId ?? ""));
+        return {
+          content: [{ type: "text", text: JSON.stringify(await worldpayRequest("GET", `/reports/reconciliations/batches/${batchId}`, undefined, "reports"), null, 2) }],
+        };
+      }
+
       case "accept_dispute": {
         const disputeId = encodeURIComponent(String(a.disputeId ?? ""));
         const reference = a.reference as string | undefined;
@@ -471,7 +699,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-worldpay", version: "0.1.0-alpha.1" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-worldpay", version: "0.2.0-alpha.1" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);
