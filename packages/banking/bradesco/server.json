@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-bradesco",
+  "description": "MCP server for Bradesco — Brazil's 2nd largest private bank. Pix, Cobrança (boleto), Arrecadação, and Extrato via Bradesco's Developer Portal APIs (OAuth2 + mTLS).",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/banking/bradesco"
+  },
+  "version": "0.1.0-alpha.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-bradesco",
+      "version": "0.1.0-alpha.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BRADESCO_CLIENT_ID",
+          "description": "Bradesco OAuth client_id issued via the Developer Portal after contract onboarding.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BRADESCO_CLIENT_SECRET",
+          "description": "Bradesco OAuth client_secret.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BRADESCO_CERT_PATH",
+          "description": "Absolute path to the mTLS client certificate (.crt or .pem). BACEN mandates mTLS for Pix v2.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BRADESCO_KEY_PATH",
+          "description": "Absolute path to the mTLS private key (.key or .pem).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BRADESCO_ENV",
+          "description": "Environment: 'sandbox' or 'production'. Defaults to 'sandbox'.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
