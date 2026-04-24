@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-safrapay",
+  "description": "MCP server for Safrapay — Banco Safra's acquirer (B2B-banking crossover, mid-to-large BR merchants). Credit, Pix, boleto + split, statement, tokenization.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/payments/safrapay"
+  },
+  "version": "0.1.0-alpha.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-safrapay",
+      "version": "0.1.0-alpha.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SAFRAPAY_CLIENT_ID",
+          "description": "Safrapay merchant CNPJ (sent as merchantCredential header on auth)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "SAFRAPAY_CLIENT_SECRET",
+          "description": "Safrapay MerchantToken used to compute the BCRYPT Authorization header on auth",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "SAFRAPAY_MERCHANT_ID",
+          "description": "Safrapay merchant id (used in request bodies where applicable)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "SAFRAPAY_ENV",
+          "description": "Environment: 'sandbox' or 'production'. Defaults to sandbox.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
