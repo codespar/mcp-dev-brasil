@@ -14,18 +14,30 @@
  *   Arrecadação  — pay utility / tax / concessionária bills
  *   Extrato      — account statement / transactions
  *
- * Tools (11):
- *   get_oauth_token   — mint/return a cached OAuth bearer (exposed for inspection)
- *   send_pix          — initiate an outbound Pix payment
- *   create_pix_qr     — create a dynamic Pix charge + QR (cobv / cob)
- *   get_pix           — retrieve a Pix by endToEndId
- *   resolve_dict_key  — resolve a DICT key (CPF, CNPJ, email, phone, EVP) to account data
- *   refund_pix        — refund / devolução of a received Pix
- *   create_boleto     — issue a boleto
- *   get_boleto        — retrieve a boleto by bill_id
- *   cancel_boleto     — cancel (baixa) a boleto
- *   get_statement     — account statement transactions
- *   arrecadacao_pay   — pay a utility / tax / concessionária bill
+ * Tools (22):
+ *   get_oauth_token          — mint/return a cached OAuth bearer (exposed for inspection)
+ *   send_pix                 — initiate an outbound Pix payment
+ *   create_pix_qr            — create a dynamic Pix charge + QR (cob immediate)
+ *   create_pix_cobv          — create a Pix due charge (cobv, com vencimento)
+ *   get_pix_cob              — retrieve a Pix charge by txid
+ *   list_pix_cob             — list Pix immediate charges by period
+ *   update_pix_cob           — update / revise a Pix immediate charge (PATCH)
+ *   list_pix_received        — list received Pix by period (Pix recebidos)
+ *   get_pix                  — retrieve a Pix by endToEndId
+ *   resolve_dict_key         — resolve a DICT key to account data
+ *   register_dict_key        — register a new DICT key for the merchant
+ *   delete_dict_key          — remove a merchant DICT key
+ *   refund_pix               — refund / devolução of a received Pix
+ *   create_boleto            — issue a boleto
+ *   get_boleto               — retrieve a boleto by bill_id
+ *   cancel_boleto            — cancel (baixa) a boleto
+ *   download_boleto_pdf      — fetch the PDF / second-copy of a boleto
+ *   get_account_balance      — get current balance for a merchant account
+ *   get_statement            — account statement transactions
+ *   send_ted                 — initiate a TED transfer to another bank
+ *   transfer_internal        — transfer between Santander accounts (TEF / mesma instituição)
+ *   arrecadacao_pay          — pay a utility / tax / concessionária bill
+ *   create_openfinance_consent — create an Open Finance consent (data or payment)
  *
  * Authentication
  *   OAuth 2.0 client_credentials + mandatory mTLS. BACEN requires mTLS for
@@ -34,7 +46,7 @@
  *   env) and routes all HTTPS requests through a Node https.Agent that
  *   presents them.
  *
- * Version: 0.1.0-alpha.1
+ * Version: 0.2.0-alpha.1
  *   developer.santander.com.br is contract-gated — full OpenAPI specs are
  *   only visible to onboarded merchants. Some paths below (boleto at
  *   /collection_bill_management/v2, token at /auth/oauth/v2/token, hosts
@@ -195,7 +207,7 @@ async function santanderRequest(method: string, path: string, body?: unknown): P
 }
 
 const server = new Server(
-  { name: "mcp-santander", version: "0.1.0-alpha.1" },
+  { name: "mcp-santander", version: "0.2.0-alpha.1" },
   { capabilities: { tools: {} } }
 );
 
@@ -370,6 +382,198 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "create_pix_cobv",
+      description: "Create a Pix charge with due date (cobv — cobrança com vencimento). Used for boleto-replacement flows: the payer sees a Pix QR with a due date, fine, and interest. Requires payer identification.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          txid: { type: "string", description: "26-35 char alphanumeric txid chosen by the merchant" },
+          amount: { type: "string", description: "Original amount in BRL major units, e.g. '250.00'" },
+          due_date: { type: "string", description: "Due date ISO-8601 (YYYY-MM-DD)" },
+          validity_after_due: { type: "number", description: "Days the QR remains payable after due_date (default 30)" },
+          payer: {
+            type: "object",
+            description: "Payer identification (mandatory for cobv)",
+            properties: {
+              document: { type: "string", description: "CPF or CNPJ digits only" },
+              name: { type: "string" },
+            },
+            required: ["document", "name"],
+          },
+          fine: { type: "object", description: "Multa: { modalidade, valorPerc }" },
+          interest: { type: "object", description: "Juros: { modalidade, valorPerc }" },
+          discount: { type: "object", description: "Desconto: { modalidade, descontoDataFixa }" },
+          description: { type: "string", description: "Payer-visible description" },
+        },
+        required: ["txid", "amount", "due_date", "payer"],
+      },
+    },
+    {
+      name: "get_pix_cob",
+      description: "Retrieve a Pix immediate charge (cob) by its txid. Returns status, EMV payload, and location.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          txid: { type: "string", description: "Merchant-chosen txid of the cob" },
+        },
+        required: ["txid"],
+      },
+    },
+    {
+      name: "list_pix_cob",
+      description: "List Pix immediate charges (cob) created in a given period. Paginated; filter by status optional.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          from: { type: "string", description: "Start timestamp ISO-8601 (inicio)" },
+          to: { type: "string", description: "End timestamp ISO-8601 (fim)" },
+          status: { type: "string", description: "Filter by cob status: ATIVA | CONCLUIDA | REMOVIDA_PELO_USUARIO_RECEBEDOR | REMOVIDA_PELO_PSP" },
+          page: { type: "number", description: "Page number (paginacao.paginaAtual)" },
+          page_size: { type: "number", description: "Items per page (paginacao.itensPorPagina)" },
+        },
+        required: ["from", "to"],
+      },
+    },
+    {
+      name: "update_pix_cob",
+      description: "Update (PATCH) an existing Pix immediate charge. Typical uses: change status to REMOVIDA_PELO_USUARIO_RECEBEDOR, adjust amount or payer info on an ATIVA charge.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          txid: { type: "string", description: "txid of the cob to update" },
+          status: { type: "string", description: "New status, e.g. REMOVIDA_PELO_USUARIO_RECEBEDOR" },
+          amount: { type: "string", description: "New original amount (if editable)" },
+          payer: { type: "object", description: "Updated payer data (document, name)" },
+          description: { type: "string", description: "Updated payer-visible description" },
+        },
+        required: ["txid"],
+      },
+    },
+    {
+      name: "list_pix_received",
+      description: "List received Pix (Pix recebidos) in a given period. Used for reconciliation of inbound payments, including those without an associated cob.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          from: { type: "string", description: "Start timestamp ISO-8601 (inicio)" },
+          to: { type: "string", description: "End timestamp ISO-8601 (fim)" },
+          txid: { type: "string", description: "Optional: filter by txid of originating cob" },
+          cpf: { type: "string", description: "Optional: filter by payer CPF digits only" },
+          cnpj: { type: "string", description: "Optional: filter by payer CNPJ digits only" },
+          page: { type: "number", description: "Page number" },
+          page_size: { type: "number", description: "Items per page" },
+        },
+        required: ["from", "to"],
+      },
+    },
+    {
+      name: "register_dict_key",
+      description: "Register a new DICT key for one of the merchant's Santander accounts. BACEN enforces ownership proof (the account document must match the key for CPF/CNPJ keys).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          key_type: { type: "string", description: "CPF | CNPJ | EMAIL | PHONE | EVP" },
+          key: { type: "string", description: "Key value (omit for EVP — BCB generates a UUID)" },
+          account: { type: "string", description: "Merchant agência-conta that the key will point to" },
+          account_type: { type: "string", description: "CACC (checking) | SVGS (savings)" },
+        },
+        required: ["key_type", "account"],
+      },
+    },
+    {
+      name: "delete_dict_key",
+      description: "Remove (unregister) a DICT key previously registered for the merchant. Does not affect received Pix that used the key historically.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          key: { type: "string", description: "DICT key to remove" },
+        },
+        required: ["key"],
+      },
+    },
+    {
+      name: "download_boleto_pdf",
+      description: "Fetch the PDF (second copy / segunda via) of a registered boleto. Returns a base64-encoded PDF payload or a time-limited URL, depending on Santander's workspace config.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          workspace_id: { type: "string", description: "Santander workspace_id that owns the boleto" },
+          bill_id: { type: "string", description: "Santander bill_id / bank_slip identifier" },
+        },
+        required: ["workspace_id", "bill_id"],
+      },
+    },
+    {
+      name: "get_account_balance",
+      description: "Get current available and blocked balance for a Santander merchant account.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          account: { type: "string", description: "Agência-conta identifier of the merchant account" },
+        },
+        required: ["account"],
+      },
+    },
+    {
+      name: "send_ted",
+      description: "Initiate a TED transfer from a Santander merchant account to an account at another bank. For same-day settlement within the TED cutoff window.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          amount: { type: "string", description: "Amount in BRL major units, e.g. '5000.00'" },
+          payer_account: { type: "string", description: "Merchant account to debit (agência-conta)" },
+          payee: {
+            type: "object",
+            description: "Payee bank account",
+            properties: {
+              name: { type: "string" },
+              document: { type: "string", description: "CPF or CNPJ digits only" },
+              bank_ispb: { type: "string", description: "8-digit ISPB of payee's bank" },
+              bank_code: { type: "string", description: "3-digit COMPE bank code (alternative to ISPB)" },
+              branch: { type: "string" },
+              account: { type: "string" },
+              account_type: { type: "string", description: "CACC | SVGS" },
+            },
+            required: ["name", "document", "branch", "account"],
+          },
+          purpose_code: { type: "string", description: "BACEN TED finalidade code (default 1 - Crédito em Conta)" },
+          idempotency_key: { type: "string", description: "Merchant-side idempotency key (UUID recommended)" },
+        },
+        required: ["amount", "payer_account", "payee", "idempotency_key"],
+      },
+    },
+    {
+      name: "transfer_internal",
+      description: "Transfer between two Santander accounts (TEF / mesma instituição). Settles instantly and is fee-free for most covenants.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          amount: { type: "string", description: "Amount in BRL major units" },
+          payer_account: { type: "string", description: "Source merchant account (agência-conta)" },
+          payee_account: { type: "string", description: "Destination Santander account (agência-conta)" },
+          payee_document: { type: "string", description: "Destination owner CPF/CNPJ digits only" },
+          description: { type: "string", description: "Free-text description on the statement" },
+          idempotency_key: { type: "string", description: "Merchant-side idempotency key (UUID recommended)" },
+        },
+        required: ["amount", "payer_account", "payee_account", "idempotency_key"],
+      },
+    },
+    {
+      name: "create_openfinance_consent",
+      description: "Create an Open Finance consent (BACEN-regulated) for data access or payment initiation against a third-party's Santander account. Returns a consent_id and authorization_url the end user must approve.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          consent_type: { type: "string", description: "DATA (read account info) | PAYMENT (initiate a Pix)" },
+          user_document: { type: "string", description: "End-user CPF/CNPJ digits only" },
+          permissions: { type: "array", description: "Open Finance permission strings, e.g. ['ACCOUNTS_READ','RESOURCES_READ']", items: { type: "string" } },
+          expiration: { type: "string", description: "Consent expiration ISO-8601 (max 12 months for data)" },
+          payment: { type: "object", description: "Required for consent_type=PAYMENT: { amount, creditor: { document, name, account } }" },
+        },
+        required: ["consent_type", "user_document"],
+      },
+    },
+    {
       name: "arrecadacao_pay",
       description: "Pay a utility, tax, or concessionária bill via Santander Arrecadação / Pagamento de Contas. Works with barcode (código de barras) or linha digitável.",
       inputSchema: {
@@ -458,6 +662,91 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         // /bank_account_information/v1 or /extrato/v1/contas/{account}.
         return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("GET", `/bank_account_information/v1/accounts/${account}/statements?${params}`), null, 2) }] };
       }
+      case "create_pix_cobv": {
+        // TODO(verify): Santander gated path. BACEN Pix v2 standard is
+        // PUT /pix/v2/cobv/{txid}. Santander's psp-side product may expose
+        // this under /cobv_management/v1 — confirm via contract.
+        const txid = encodeURIComponent(String(a.txid ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("PUT", `/pix/v2/cobv/${txid}`, a), null, 2) }] };
+      }
+      case "get_pix_cob": {
+        // TODO(verify): BACEN Pix v2 standard path; Santander alignment assumed.
+        const txid = encodeURIComponent(String(a.txid ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("GET", `/pix/v2/cob/${txid}`), null, 2) }] };
+      }
+      case "list_pix_cob": {
+        // TODO(verify): BACEN standard GET /cob with inicio/fim query params.
+        const params = new URLSearchParams();
+        params.set("inicio", String(a.from ?? ""));
+        params.set("fim", String(a.to ?? ""));
+        if (a.status !== undefined) params.set("status", String(a.status));
+        if (a.page !== undefined) params.set("paginacao.paginaAtual", String(a.page));
+        if (a.page_size !== undefined) params.set("paginacao.itensPorPagina", String(a.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("GET", `/pix/v2/cob?${params}`), null, 2) }] };
+      }
+      case "update_pix_cob": {
+        // TODO(verify): BACEN standard PATCH /cob/{txid}.
+        const txid = encodeURIComponent(String(a.txid ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("PATCH", `/pix/v2/cob/${txid}`, a), null, 2) }] };
+      }
+      case "list_pix_received": {
+        // TODO(verify): BACEN standard GET /pix with inicio/fim. Santander may
+        // expose this under /pix_collection/v1/received on the merchant side.
+        const params = new URLSearchParams();
+        params.set("inicio", String(a.from ?? ""));
+        params.set("fim", String(a.to ?? ""));
+        if (a.txid !== undefined) params.set("txid", String(a.txid));
+        if (a.cpf !== undefined) params.set("cpf", String(a.cpf));
+        if (a.cnpj !== undefined) params.set("cnpj", String(a.cnpj));
+        if (a.page !== undefined) params.set("paginacao.paginaAtual", String(a.page));
+        if (a.page_size !== undefined) params.set("paginacao.itensPorPagina", String(a.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("GET", `/pix/v2/pix?${params}`), null, 2) }] };
+      }
+      case "register_dict_key": {
+        // TODO(verify): Santander merchant-side DICT registration path.
+        // BACEN DICT API uses POST /entries under the PSP; merchant-facing
+        // gateway typically wraps it at /pix/v2/dict or /dict/v1/keys.
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("POST", "/pix/v2/dict", a), null, 2) }] };
+      }
+      case "delete_dict_key": {
+        // TODO(verify): paired with register_dict_key above.
+        const key = encodeURIComponent(String(a.key ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("DELETE", `/pix/v2/dict/${key}`), null, 2) }] };
+      }
+      case "download_boleto_pdf": {
+        // TODO(verify): Santander Cobrança v2 second-copy endpoint. Public
+        // docs reference GET /workspaces/{ws}/bank_slips/{id}/bank_slips_pdf
+        // for some covenants; others return the PDF inline on the main GET.
+        const ws = encodeURIComponent(String(a.workspace_id ?? ""));
+        const id = encodeURIComponent(String(a.bill_id ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("GET", `/collection_bill_management/v2/workspaces/${ws}/bank_slips/${id}/bank_slips_pdf`), null, 2) }] };
+      }
+      case "get_account_balance": {
+        // TODO(verify): path. Santander bundles balance under the account
+        // information product; common path is /bank_account_information/v1/accounts/{acc}/balances.
+        const account = encodeURIComponent(String(a.account ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("GET", `/bank_account_information/v1/accounts/${account}/balances`), null, 2) }] };
+      }
+      case "send_ted": {
+        // TODO(verify): Santander TED product path. Common convention across
+        // tier-1 BR banks is /transfers/v1/ted or /payments/v1/ted.
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("POST", "/transfers/v1/ted", a), null, 2) }] };
+      }
+      case "transfer_internal": {
+        // TODO(verify): Santander TEF / same-institution transfer path.
+        // Commonly /transfers/v1/tef or /transfers/v1/internal.
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("POST", "/transfers/v1/internal", a), null, 2) }] };
+      }
+      case "create_openfinance_consent": {
+        // TODO(verify): Santander Open Finance consent path. BACEN Open Finance
+        // standard is POST /consents/v3/consents (data) or
+        // /payments/v4/consents (payment). Santander exposes both behind the
+        // trust-open gateway under /open-banking/ or /open-finance/.
+        const path = String(a.consent_type ?? "").toUpperCase() === "PAYMENT"
+          ? "/open-banking/payments/v4/consents"
+          : "/open-banking/consents/v3/consents";
+        return { content: [{ type: "text", text: JSON.stringify(await santanderRequest("POST", path, a), null, 2) }] };
+      }
       case "arrecadacao_pay": {
         // TODO(verify): path. Public Santander guides document the product
         // under "API de Pagamento de Contas"; exact base path is gated.
@@ -486,7 +775,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-santander", version: "0.1.0-alpha.1" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-santander", version: "0.2.0-alpha.1" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);
