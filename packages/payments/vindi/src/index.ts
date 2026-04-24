@@ -3,17 +3,15 @@
 /**
  * MCP Server for Vindi — Brazilian recurring billing platform.
  *
- * Tools:
- * - create_subscription: Create a recurring subscription
- * - get_subscription: Get subscription details
- * - list_subscriptions: List subscriptions with filters
- * - create_bill: Create a bill (charge)
- * - get_bill: Get bill details
- * - list_bills: List bills with filters
- * - create_customer: Create a customer
- * - get_customer: Get customer details
- * - create_plan: Create a billing plan
- * - list_plans: List available plans
+ * Tools (20):
+ * Customers: create_customer, get_customer, update_customer
+ * Products: create_product, list_products
+ * Plans: create_plan, list_plans
+ * Subscriptions: create_subscription, get_subscription, list_subscriptions,
+ *   cancel_subscription, reactivate_subscription
+ * Bills: create_bill, get_bill, list_bills, cancel_bill, charge_bill
+ * Charges: refund_charge
+ * Payment Profiles: create_payment_profile, list_payment_profiles
  *
  * Environment:
  *   VINDI_API_KEY — API key from https://app.vindi.com.br/
@@ -49,7 +47,7 @@ async function vindiRequest(method: string, path: string, body?: unknown): Promi
 }
 
 const server = new Server(
-  { name: "mcp-vindi", version: "0.1.0" },
+  { name: "mcp-vindi", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -210,6 +208,142 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "update_customer",
+      description: "Update a customer's details",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Customer ID" },
+          name: { type: "string", description: "Customer name" },
+          email: { type: "string", description: "Email address" },
+          registry_code: { type: "string", description: "CPF or CNPJ" },
+          notes: { type: "string", description: "Free-form notes" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "create_product",
+      description: "Create a product (catalog item that can be attached to plans or bills)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Product name" },
+          code: { type: "string", description: "Internal product code" },
+          description: { type: "string", description: "Product description" },
+          status: { type: "string", enum: ["active", "inactive"], description: "Product status" },
+          pricing_schema: {
+            type: "object",
+            description: "Pricing schema (e.g. { price: 99.90, schema_type: 'flat' })",
+            properties: {
+              price: { type: "number" },
+              schema_type: { type: "string", enum: ["flat", "per_unit", "volume", "step"] },
+            },
+          },
+        },
+        required: ["name", "pricing_schema"],
+      },
+    },
+    {
+      name: "list_products",
+      description: "List products in the catalog",
+      inputSchema: {
+        type: "object",
+        properties: {
+          page: { type: "number", description: "Page number" },
+          per_page: { type: "number", description: "Items per page" },
+          status: { type: "string", enum: ["active", "inactive"], description: "Filter by status" },
+        },
+      },
+    },
+    {
+      name: "cancel_subscription",
+      description: "Cancel a subscription immediately",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Subscription ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "reactivate_subscription",
+      description: "Reactivate a canceled subscription",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Subscription ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "cancel_bill",
+      description: "Cancel a pending bill",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Bill ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "charge_bill",
+      description: "Retry charging a pending bill (runs the billing workflow)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Bill ID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "refund_charge",
+      description: "Refund a charge (full or partial). Requires the gateway to support refunds.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Charge ID" },
+          amount: { type: "number", description: "Refund amount (omit for full refund)" },
+          cancel_bill: { type: "boolean", description: "Whether to also cancel the associated bill" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "create_payment_profile",
+      description: "Create a payment profile (tokenized card / saved payment method) for a customer",
+      inputSchema: {
+        type: "object",
+        properties: {
+          customer_id: { type: "number", description: "Customer ID" },
+          holder_name: { type: "string", description: "Cardholder name" },
+          card_expiration: { type: "string", description: "Card expiration MM/YYYY" },
+          card_number: { type: "string", description: "Card number (PAN)" },
+          card_cvv: { type: "string", description: "Card CVV" },
+          payment_method_code: { type: "string", description: "Payment method code (e.g. credit_card)" },
+          payment_company_code: { type: "string", description: "Card brand (visa, mastercard, elo, etc.)" },
+        },
+        required: ["customer_id", "holder_name", "card_expiration", "card_number", "payment_method_code"],
+      },
+    },
+    {
+      name: "list_payment_profiles",
+      description: "List payment profiles, optionally filtered by customer",
+      inputSchema: {
+        type: "object",
+        properties: {
+          customer_id: { type: "number", description: "Filter by customer ID" },
+          page: { type: "number", description: "Page number" },
+          per_page: { type: "number", description: "Items per page" },
+          status: { type: "string", enum: ["active", "inactive"], description: "Filter by status" },
+        },
+      },
+    },
   ],
 }));
 
@@ -252,6 +386,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args?.per_page) params.set("per_page", String(args.per_page));
         return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("GET", `/plans?${params}`), null, 2) }] };
       }
+      case "update_customer": {
+        const { id, ...body } = (args ?? {}) as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("PUT", `/customers/${id}`, body), null, 2) }] };
+      }
+      case "create_product":
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("POST", "/products", args), null, 2) }] };
+      case "list_products": {
+        const params = new URLSearchParams();
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.per_page) params.set("per_page", String(args.per_page));
+        if (args?.status) params.set("query", `status=${args.status}`);
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("GET", `/products?${params}`), null, 2) }] };
+      }
+      case "cancel_subscription":
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("DELETE", `/subscriptions/${args?.id}`), null, 2) }] };
+      case "reactivate_subscription":
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("POST", `/subscriptions/${args?.id}/reactivate`), null, 2) }] };
+      case "cancel_bill":
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("DELETE", `/bills/${args?.id}`), null, 2) }] };
+      case "charge_bill":
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("POST", `/bills/${args?.id}/charge`), null, 2) }] };
+      case "refund_charge": {
+        const { id, ...body } = (args ?? {}) as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("POST", `/charges/${id}/refund`, body), null, 2) }] };
+      }
+      case "create_payment_profile":
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("POST", "/payment_profiles", args), null, 2) }] };
+      case "list_payment_profiles": {
+        const params = new URLSearchParams();
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.per_page) params.set("per_page", String(args.per_page));
+        const qParts: string[] = [];
+        if (args?.customer_id) qParts.push(`customer_id=${args.customer_id}`);
+        if (args?.status) qParts.push(`status=${args.status}`);
+        if (qParts.length) params.set("query", qParts.join(" "));
+        return { content: [{ type: "text", text: JSON.stringify(await vindiRequest("GET", `/payment_profiles?${params}`), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -274,7 +445,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-vindi", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-vindi", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
