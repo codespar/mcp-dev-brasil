@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-quickbooks",
+  "description": "MCP server for QuickBooks Online (Intuit) — global ERP/accounting platform. Customers, invoices, payments, items, accounts, and P&L reports.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/erp/quickbooks"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-quickbooks",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "QB_ACCESS_TOKEN",
+          "description": "QuickBooks OAuth2 bearer access token. Expires in 1hr — caller is responsible for refresh via Intuit's OAuth2 auth_code flow.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "QB_REALM_ID",
+          "description": "QuickBooks company id (realmId). Issued when a user authorizes your app against a specific company.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "QB_ENV",
+          "description": "QuickBooks environment: 'sandbox' (default) or 'production'. Selects sandbox-quickbooks.api.intuit.com vs quickbooks.api.intuit.com.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "QB_MINOR_VERSION",
+          "description": "QuickBooks API minor version. Defaults to 70.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
