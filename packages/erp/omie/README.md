@@ -53,18 +53,65 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 
 ## Tools
 
+### Customers, Products, Companies
+
 | Tool | Description |
 |------|-------------|
 | `list_customers` | List customers from Omie ERP |
 | `create_customer` | Create a customer in Omie ERP |
 | `list_products` | List products from Omie ERP |
 | `create_product` | Create a product in Omie ERP |
-| `create_order` | Create a sales order in Omie ERP |
-| `list_orders` | List sales orders from Omie ERP |
-| `list_invoices` | List invoices (NF) from Omie ERP |
-| `get_financial` | List accounts receivable from Omie ERP |
-| `create_invoice` | Consult a specific NF by ID in Omie ERP |
 | `get_company_info` | List companies registered in Omie ERP |
+
+### Sales Orders & Invoices
+
+| Tool | Description |
+|------|-------------|
+| `create_order` | Create a sales order |
+| `list_orders` | List sales orders |
+| `get_sales_order` | Consult a specific sales order by ID or integration code |
+| `update_sales_order` | Alter an existing sales order |
+| `invoice_sales_order` | Generate an invoice (NF) from a sales order |
+| `list_invoices` | List invoices (NF) |
+| `create_invoice` | Consult a specific NF by ID |
+
+### Services & Purchasing
+
+| Tool | Description |
+|------|-------------|
+| `create_service_order` | Create a service order (OS) |
+| `list_service_orders` | List service orders |
+| `create_purchase_order` | Create a purchase order |
+| `list_purchase_orders` | List purchase orders |
+
+### Financial (AR / AP / Banking)
+
+| Tool | Description |
+|------|-------------|
+| `get_financial` | List accounts receivable |
+| `create_account_payable` | Create an accounts payable entry |
+| `list_accounts_payable` | List accounts payable titles |
+| `pay_account_payable` | Settle / record payment on an AP title |
+| `list_financial_movements` | List unified financial movements (AP + AR + CC) |
+| `get_bank_accounts` | List registered bank accounts |
+| `get_bank_statement` | Bank statement (extrato) for a period |
+| `create_cash_entry` | Create a bank account ledger entry (lançamento) |
+| `list_dre` | List DRE (income statement) accounts |
+
+### Auxiliary Registers
+
+| Tool | Description |
+|------|-------------|
+| `list_categories` | List chart of accounts categories |
+| `list_departments` | List departments (cost centers) |
+| `list_projects` | List projects |
+
+### Inventory
+
+| Tool | Description |
+|------|-------------|
+| `create_stock_adjustment` | Create an inventory adjustment (entry/exit/balance) |
+| `get_stock_position` | Get current stock position / balance |
 
 ## Authentication
 
@@ -90,16 +137,12 @@ Omie provides a sandbox via app registration. Create an app to get test credenti
 
 ## Roadmap
 
-### v0.2 (planned)
-- `create_service_order` — Create a service order
-- `list_service_orders` — List service orders with filters
-- `create_purchase_order` — Create a purchase order
-- `list_purchase_orders` — List purchase orders with filters
-- `get_bank_accounts` — Get registered bank accounts
-
 ### v0.3 (planned)
 - `create_production_order` — Create a production order
-- `accounting_entries` — Create and list accounting entries
+- `emit_nfe` — Emit NF-e (native emission, not import)
+- `reconcile_bank_transaction` — Bank reconciliation matching
+- `create_service_contract` — Service contracts CRUD
+- `create_custom_field` — Merchant custom fields
 
 Want to contribute? [Open a PR](https://github.com/codespar/mcp-dev-brasil) or [request a tool](https://github.com/codespar/mcp-dev-brasil/issues).
 

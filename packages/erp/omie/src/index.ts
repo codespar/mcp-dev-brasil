@@ -22,6 +22,21 @@
  * - create_purchase_order: Create a purchase order
  * - list_purchase_orders: List purchase orders
  * - get_bank_accounts: List registered bank accounts
+ * - create_account_payable: Create accounts payable entry (AP)
+ * - list_accounts_payable: List accounts payable
+ * - pay_account_payable: Settle/record payment on an AP title
+ * - list_dre: List DRE (income statement) accounts
+ * - get_bank_statement: Bank statement for a period
+ * - list_categories: List chart of accounts categories
+ * - list_departments: List departments
+ * - list_projects: List projects
+ * - create_cash_entry: Create a bank account ledger entry (lançamento)
+ * - list_financial_movements: List unified financial movements (AP/AR/CC)
+ * - create_stock_adjustment: Create an inventory adjustment (entry/exit/balance)
+ * - get_stock_position: Get current stock position / balance
+ * - update_sales_order: Alter an existing sales order
+ * - get_sales_order: Consult a specific sales order
+ * - invoice_sales_order: Generate an invoice (NF) from a sales order
  *
  * Environment:
  *   OMIE_APP_KEY — Omie app key
@@ -74,7 +89,7 @@ async function omieRequest(path: string, call: string, param: unknown[]): Promis
 }
 
 const server = new Server(
-  { name: "mcp-omie", version: "0.1.0" },
+  { name: "mcp-omie", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -280,6 +295,218 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "create_account_payable",
+      description: "Create an accounts payable (AP) entry in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigo_lancamento_integracao: { type: "string", description: "Integration code (unique)" },
+          codigo_cliente_fornecedor: { type: "number", description: "Omie supplier ID" },
+          data_vencimento: { type: "string", description: "Due date (DD/MM/YYYY)" },
+          valor_documento: { type: "number", description: "Document value in BRL" },
+          codigo_categoria: { type: "string", description: "Category code (chart of accounts)" },
+          data_previsao: { type: "string", description: "Expected payment date (DD/MM/YYYY)" },
+          id_conta_corrente: { type: "number", description: "Bank account ID" },
+          numero_documento: { type: "string", description: "Document/invoice number" },
+          observacao: { type: "string", description: "Notes" },
+        },
+        required: ["codigo_lancamento_integracao", "codigo_cliente_fornecedor", "data_vencimento", "valor_documento", "codigo_categoria"],
+      },
+    },
+    {
+      name: "list_accounts_payable",
+      description: "List accounts payable (AP) titles in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+          dDtVencDe: { type: "string", description: "Due date from (DD/MM/YYYY)" },
+          dDtVencAte: { type: "string", description: "Due date to (DD/MM/YYYY)" },
+          status_titulo: { type: "string", description: "Title status (ABERTO, LIQUIDADO, etc.)" },
+        },
+      },
+    },
+    {
+      name: "pay_account_payable",
+      description: "Settle / record payment (baixa) for an AP title in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigo_lancamento: { type: "number", description: "Omie AP title ID" },
+          codigo_lancamento_integracao: { type: "string", description: "Integration code (alternative to codigo_lancamento)" },
+          codigo_baixa: { type: "string", description: "Settlement integration code (unique)" },
+          valor: { type: "number", description: "Paid amount in BRL" },
+          data: { type: "string", description: "Payment date (DD/MM/YYYY)" },
+          codigo_conta_corrente: { type: "number", description: "Bank account ID used for the payment" },
+          observacao: { type: "string", description: "Payment notes" },
+        },
+        required: ["codigo_baixa", "valor", "data", "codigo_conta_corrente"],
+      },
+    },
+    {
+      name: "list_dre",
+      description: "List DRE (income statement) chart of accounts in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          apenasContasAtivas: { type: "string", enum: ["S", "N"], description: "Only active accounts (S/N, default S)" },
+        },
+      },
+    },
+    {
+      name: "get_bank_statement",
+      description: "Retrieve bank account statement (extrato) for a period from Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nCodCC: { type: "number", description: "Bank account ID" },
+          cCodIntCC: { type: "string", description: "Bank account integration code (alternative to nCodCC)" },
+          dPeriodoInicial: { type: "string", description: "Start date (DD/MM/YYYY)" },
+          dPeriodoFinal: { type: "string", description: "End date (DD/MM/YYYY)" },
+          cExibirApenasSaldo: { type: "string", enum: ["S", "N"], description: "Show only balances (S/N)" },
+        },
+        required: ["dPeriodoInicial", "dPeriodoFinal"],
+      },
+    },
+    {
+      name: "list_categories",
+      description: "List chart of accounts categories in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+        },
+      },
+    },
+    {
+      name: "list_departments",
+      description: "List departments (cost centers) in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+        },
+      },
+    },
+    {
+      name: "list_projects",
+      description: "List projects in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          pagina: { type: "number", description: "Page number (default 1)" },
+          registros_por_pagina: { type: "number", description: "Records per page (default 50)" },
+          apenas_importado_api: { type: "string", enum: ["S", "N"], description: "Only API-imported projects" },
+        },
+      },
+    },
+    {
+      name: "create_cash_entry",
+      description: "Create a bank account ledger entry (lançamento de conta corrente) in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cabecalho: {
+            type: "object",
+            description: "Entry header: { cCodIntLanc, nCodCC, dDtLanc, nValorLanc, cNatureza (E=entrada, S=saida), cTipo (DEB/CRE), cHistorico }",
+          },
+          detalhes: {
+            type: "object",
+            description: "Entry details: { cCodCateg, nCodCliente, cObs, nCodProjeto, nCodDepto }",
+          },
+        },
+        required: ["cabecalho"],
+      },
+    },
+    {
+      name: "list_financial_movements",
+      description: "List unified financial movements (AP + AR + CC) in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nPagina: { type: "number", description: "Page number (default 1)" },
+          nRegPorPagina: { type: "number", description: "Records per page (default 50)" },
+          dDtPagtoDe: { type: "string", description: "Payment date from (DD/MM/YYYY)" },
+          dDtPagtoAte: { type: "string", description: "Payment date to (DD/MM/YYYY)" },
+          cNatureza: { type: "string", enum: ["R", "P", "T"], description: "Nature (R=receivable, P=payable, T=all)" },
+          cStatus: { type: "string", description: "Status (ABERTO, LIQUIDADO, VENCIDO, etc.)" },
+        },
+      },
+    },
+    {
+      name: "create_stock_adjustment",
+      description: "Create an inventory adjustment (entry/exit/balance) in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigo_produto: { type: "number", description: "Omie product ID" },
+          codigo_produto_integracao: { type: "string", description: "Product integration code (alternative)" },
+          codigo_local_estoque: { type: "number", description: "Warehouse location ID" },
+          tipo_ajuste: { type: "string", enum: ["ENT", "SAI", "SLD", "TRF"], description: "Adjustment type: ENT (entry), SAI (exit), SLD (balance), TRF (transfer)" },
+          quantidade: { type: "number", description: "Quantity" },
+          valor: { type: "number", description: "Unit value in BRL" },
+          data_ajuste: { type: "string", description: "Adjustment date (DD/MM/YYYY)" },
+          codigo_motivo: { type: "number", description: "Reason code" },
+          observacao: { type: "string", description: "Notes" },
+        },
+        required: ["tipo_ajuste", "quantidade", "data_ajuste"],
+      },
+    },
+    {
+      name: "get_stock_position",
+      description: "Get current stock position / balance in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nPagina: { type: "number", description: "Page number (default 1)" },
+          nRegPorPagina: { type: "number", description: "Records per page (default 50)" },
+          dDataPosicao: { type: "string", description: "Position reference date (DD/MM/YYYY)" },
+          cExibirTodos: { type: "string", enum: ["S", "N"], description: "Include items with zero stock (S/N)" },
+          codigo_local_estoque: { type: "number", description: "Filter by warehouse location ID" },
+        },
+      },
+    },
+    {
+      name: "update_sales_order",
+      description: "Alter an existing sales order in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cabecalho: { type: "object", description: "Order header: { codigo_pedido, codigo_pedido_integracao, codigo_cliente, data_previsao, etapa, ... }" },
+          itens: { type: "array", description: "Updated order items" },
+          observacoes: { type: "object", description: "Order observations" },
+          informacoes_adicionais: { type: "object", description: "Additional info (codigo_vendedor, etc.)" },
+          frete: { type: "object", description: "Shipping details" },
+        },
+        required: ["cabecalho"],
+      },
+    },
+    {
+      name: "get_sales_order",
+      description: "Consult a specific sales order by ID or integration code in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          codigo_pedido: { type: "number", description: "Omie order ID" },
+          codigo_pedido_integracao: { type: "string", description: "Integration order code (alternative)" },
+        },
+      },
+    },
+    {
+      name: "invoice_sales_order",
+      description: "Generate an invoice (NF) from an existing sales order in Omie ERP",
+      inputSchema: {
+        type: "object",
+        properties: {
+          nCodPed: { type: "number", description: "Omie order ID" },
+          cCodIntPed: { type: "string", description: "Integration order code (alternative)" },
+        },
+      },
+    },
   ],
 }));
 
@@ -361,6 +588,79 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           pagina: args?.pagina || 1,
           registros_por_pagina: args?.registros_por_pagina || 50,
         }]), null, 2) }] };
+      case "create_account_payable":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/financas/contapagar/", "IncluirContaPagar", [args || {}]), null, 2) }] };
+      case "list_accounts_payable":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/financas/contapagar/", "ListarContasPagar", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+          ...(args?.dDtVencDe ? { dDtVencDe: args.dDtVencDe } : {}),
+          ...(args?.dDtVencAte ? { dDtVencAte: args.dDtVencAte } : {}),
+          ...(args?.status_titulo ? { status_titulo: args.status_titulo } : {}),
+        }]), null, 2) }] };
+      case "pay_account_payable":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/financas/contapagar/", "LancarPagamento", [args || {}]), null, 2) }] };
+      case "list_dre":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/geral/dre/", "ListarCadastroDRE", [{
+          apenasContasAtivas: args?.apenasContasAtivas || "S",
+        }]), null, 2) }] };
+      case "get_bank_statement":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/financas/extrato/", "ListarExtrato", [{
+          ...(args?.nCodCC ? { nCodCC: args.nCodCC } : {}),
+          ...(args?.cCodIntCC ? { cCodIntCC: args.cCodIntCC } : {}),
+          dPeriodoInicial: args?.dPeriodoInicial,
+          dPeriodoFinal: args?.dPeriodoFinal,
+          ...(args?.cExibirApenasSaldo ? { cExibirApenasSaldo: args.cExibirApenasSaldo } : {}),
+        }]), null, 2) }] };
+      case "list_categories":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/geral/categorias/", "ListarCategorias", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+        }]), null, 2) }] };
+      case "list_departments":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/geral/departamentos/", "ListarDepartamentos", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+        }]), null, 2) }] };
+      case "list_projects":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/geral/projetos/", "ListarProjetos", [{
+          pagina: args?.pagina || 1,
+          registros_por_pagina: args?.registros_por_pagina || 50,
+          ...(args?.apenas_importado_api ? { apenas_importado_api: args.apenas_importado_api } : {}),
+        }]), null, 2) }] };
+      case "create_cash_entry":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/financas/contacorrentelancamentos/", "IncluirLancCC", [args || {}]), null, 2) }] };
+      case "list_financial_movements":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/financas/mf/", "ListarMovimentos", [{
+          nPagina: args?.nPagina || 1,
+          nRegPorPagina: args?.nRegPorPagina || 50,
+          ...(args?.dDtPagtoDe ? { dDtPagtoDe: args.dDtPagtoDe } : {}),
+          ...(args?.dDtPagtoAte ? { dDtPagtoAte: args.dDtPagtoAte } : {}),
+          ...(args?.cNatureza ? { cNatureza: args.cNatureza } : {}),
+          ...(args?.cStatus ? { cStatus: args.cStatus } : {}),
+        }]), null, 2) }] };
+      case "create_stock_adjustment":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/estoque/ajuste/", "IncluirAjusteEstoque", [args || {}]), null, 2) }] };
+      case "get_stock_position":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/estoque/consulta/", "ListarPosEstoque", [{
+          nPagina: args?.nPagina || 1,
+          nRegPorPagina: args?.nRegPorPagina || 50,
+          ...(args?.dDataPosicao ? { dDataPosicao: args.dDataPosicao } : {}),
+          ...(args?.cExibirTodos ? { cExibirTodos: args.cExibirTodos } : {}),
+          ...(args?.codigo_local_estoque ? { codigo_local_estoque: args.codigo_local_estoque } : {}),
+        }]), null, 2) }] };
+      case "update_sales_order":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/produtos/pedido/", "AlterarPedidoVenda", [args || {}]), null, 2) }] };
+      case "get_sales_order":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/produtos/pedido/", "ConsultarPedido", [{
+          ...(args?.codigo_pedido ? { codigo_pedido: args.codigo_pedido } : {}),
+          ...(args?.codigo_pedido_integracao ? { codigo_pedido_integracao: args.codigo_pedido_integracao } : {}),
+        }]), null, 2) }] };
+      case "invoice_sales_order":
+        return { content: [{ type: "text", text: JSON.stringify(await omieRequest("/produtos/pedidovendafat/", "FaturarPedidoVenda", [{
+          ...(args?.nCodPed ? { nCodPed: args.nCodPed } : {}),
+          ...(args?.cCodIntPed ? { cCodIntPed: args.cCodIntPed } : {}),
+        }]), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -383,7 +683,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-omie", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-omie", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
