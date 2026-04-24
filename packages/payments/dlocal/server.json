@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-dlocal",
+  "description": "MCP server for dLocal — LatAm cross-border payments, payouts, refunds across 15+ countries via one API",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/payments/dlocal"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-dlocal",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DLOCAL_LOGIN",
+          "description": "dLocal API Login (X-Login header)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "DLOCAL_TRANS_KEY",
+          "description": "dLocal API Trans-Key (X-Trans-Key header)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DLOCAL_SECRET_KEY",
+          "description": "dLocal API Secret Key used to sign V2 HMAC-SHA256 requests",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DLOCAL_BASE_URL",
+          "description": "dLocal API base URL. Defaults to https://api.dlocal.com (prod). Use https://sandbox.dlocal.com for sandbox.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
