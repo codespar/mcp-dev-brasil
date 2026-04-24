@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-twilio",
+  "description": "MCP server for Twilio — global SMS, WhatsApp, Voice, Verify, and Lookup across 180+ countries",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/communication/twilio"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-twilio",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "TWILIO_ACCOUNT_SID",
+          "description": "Twilio Account SID (starts with AC...). Used as username for HTTP Basic auth.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "TWILIO_AUTH_TOKEN",
+          "description": "Twilio Auth Token. Used as password for HTTP Basic auth.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "TWILIO_MESSAGING_SERVICE_SID",
+          "description": "Optional default Messaging Service SID (starts with MG...) used for send_message when From is omitted.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

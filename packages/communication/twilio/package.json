@@ -1,0 +1,36 @@
+{
+  "name": "@codespar/mcp-twilio",
+  "version": "0.1.0",
+  "description": "MCP server for Twilio — global SMS, WhatsApp, Voice, Verify, and Lookup across 180+ countries",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-twilio": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "twilio",
+    "sms",
+    "whatsapp",
+    "voice",
+    "verify",
+    "2fa",
+    "lookup",
+    "messaging",
+    "communication",
+    "global"
+  ],
+  "mcpName": "io.github.codespar/mcp-twilio"
+}
