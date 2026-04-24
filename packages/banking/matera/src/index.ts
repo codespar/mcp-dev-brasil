@@ -20,12 +20,37 @@
  *   list_dict_keys             — list DICT keys registered to merchant accounts
  *   create_pix_automatico      — register a recurring Pix agreement (BCB 2025)
  *
- * Authentication
+ * -------------------------------------------------------------------------
+ * ALPHA STATUS — endpoint paths below are NOT verified against a live sandbox.
+ *
+ * On 2026-04-24 we attempted to validate every path against doc-api.matera.com.
+ * The doc site was not reachable from our automation environment (DNS-gated;
+ * no login wall observed). Public search snippets and third-party references
+ * confirm Matera's product surface and auth model but do not surface exact URL
+ * paths. Known-suspect items are flagged inline with `TODO(verify)` comments.
+ *
+ * High-confidence corrections pending sandbox access:
+ *   - Auth: Matera's server integration uses `secret-key` + `data-signature`
+ *     headers, not OAuth2. OAuth2 is documented only for mobile / web-UI
+ *     integrations. The code below still uses the OAuth2 client_credentials
+ *     flow as a placeholder and will fail against the real server path.
+ *   - Pix Automático: BCB's 2025 spec uses POST /rec (recurrence) and /cobr
+ *     (recurring charge). `/pix/automatico` is a placeholder; the true Matera
+ *     path is unknown.
+ *   - DICT: Real DICT (RSFN-gated) sits at BCB; Matera wraps it. The wrapper
+ *     path `/pix/dict/*` is a guess.
+ *
+ * The 10 tool names + input schemas are the stable public contract. Only the
+ * internal `materaRequest(method, path, body)` calls will change when paths
+ * are verified.
+ * -------------------------------------------------------------------------
+ *
+ * Authentication (placeholder — see note above)
  *   OAuth 2.0 Client Credentials. POST /auth/token with Basic auth
  *   (client_id:client_secret) + grant_type=client_credentials. Bearer token
  *   cached in memory until a minute before expiry.
- *   Matera also supports secret-key + data-signature headers for signed
- *   server-to-server calls; not used in v0.1.
+ *   Matera's production server auth is secret-key + data-signature — NOT
+ *   implemented in this alpha.
  *
  * Environment
  *   MATERA_CLIENT_ID      OAuth2 client_id
@@ -56,6 +81,9 @@ async function getAccessToken(): Promise<string> {
     return tokenCache.accessToken;
   }
   const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
+  // TODO(verify): Matera's real token path is unconfirmed. Candidates include
+  // `/auth/token`, `/oauth/token`, `/auth/v1/token`. Leaving the original
+  // placeholder until the sandbox confirms it.
   const res = await fetch(`${BASE_URL}/auth/token`, {
     method: "POST",
     headers: {
@@ -270,6 +298,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const a = (args ?? {}) as Record<string, unknown>;
   try {
     switch (name) {
+      // TODO(verify): BCB canonical charge paths are `/cob` (immediate) and
+      // `/cobv` (dated). Matera may expose them at `/pix/charges/*` per the
+      // original guess, but this has NOT been confirmed against the sandbox.
       case "create_pix_charge_static":
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("POST", "/pix/charges/static", a), null, 2) }] };
       case "create_pix_charge_dynamic":
@@ -278,6 +309,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const txid = encodeURIComponent(String(a.txid ?? ""));
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("GET", `/pix/charges/${txid}`), null, 2) }] };
       }
+      // TODO(verify): BCB spec names outbound Pix refunds
+      // `PUT /pix/{e2eid}/devolucao/{id}`. The `POST /pix/payments/{e2eid}/refund`
+      // path below is a plausible Matera wrapper but NOT confirmed.
       case "create_pix_payment":
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("POST", "/pix/payments", a), null, 2) }] };
       case "get_pix_payment": {
@@ -299,6 +333,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const qs = params.toString();
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("GET", `/pix/payments${qs ? `?${qs}` : ""}`), null, 2) }] };
       }
+      // TODO(verify): BCB DICT is RSFN-gated and typically lives under
+      // `/api/v2/entries/*` on the Central Bank side. Matera wraps it in its
+      // own API — path `/pix/dict/*` below is a guess.
       case "resolve_pix_key": {
         const key = encodeURIComponent(String(a.key ?? ""));
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("GET", `/pix/dict/${key}`), null, 2) }] };
@@ -309,6 +346,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const qs = params.toString();
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("GET", `/pix/dict/keys${qs ? `?${qs}` : ""}`), null, 2) }] };
       }
+      // TODO(verify): `/pix/automatico` is almost certainly wrong. BCB's
+      // 2025 Pix Automático spec uses `POST /rec` (recorrência — payer
+      // authorization) and `/cobr/{txid}` (cobrança recorrente — each
+      // recurring charge). Matera likely mirrors this. The body shape here
+      // also needs to change (idRec, expiracaoSolicitacao, vinculo, etc.)
       case "create_pix_automatico":
         return { content: [{ type: "text", text: JSON.stringify(await materaRequest("POST", "/pix/automatico", a), null, 2) }] };
       default:

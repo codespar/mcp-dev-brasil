@@ -80,9 +80,7 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 
 ## Authentication
 
-Matera uses **OAuth 2.0 client_credentials**. The server calls `POST /auth/token` with HTTP Basic auth and caches the bearer token in memory until a minute before expiry.
-
-Matera also supports `secret-key` + `data-signature` headers for signed server-to-server calls. That path is not implemented in v0.1; OAuth2 is sufficient for every tool above.
+Matera's public doc index states that **server integration uses `secret-key` + `data-signature` headers**, while **OAuth2 is scoped to mobile / web-UI integrations** ([doc-api.matera.com](https://doc-api.matera.com/)). The v0.1-alpha scaffold currently implements the OAuth2 client-credentials path against `POST /auth/token`. That pairing is almost certainly wrong for server-to-server use and will be replaced with the signed-request scheme once we can validate against a live sandbox — see the "Status" section below.
 
 ## Environment Variables
 
@@ -94,7 +92,23 @@ Matera also supports `secret-key` + `data-signature` headers for signed server-t
 
 ## Status
 
-v0.1 — scaffold. Endpoint paths follow Matera's published doc structure but were not validated against a live sandbox. Expect small adjustments to paths and request shapes once the team has credentials. Schemas are deliberately lightweight — only required fields are marked `required`; nested objects accept any shape so agents can pass through fields we haven't modeled yet.
+**v0.1.0-alpha.1 — tool surface is stable, wire paths are NOT yet verified.**
+
+On 2026-04-24 we attempted to validate every endpoint path against `doc-api.matera.com`. The doc site is reachable in a browser but could not be fetched from our automation environment (DNS / network-gated; no login wall observed). Public search snippets and third-party references confirm the product surface (Pix charges, Pix payments, DICT, Pix Automático) and the authentication model (server = `secret-key` + `data-signature`; OAuth2 = end-user only) but do **not** surface the exact URL paths.
+
+Until we can run the server against a live Matera sandbox, the following remain **assumed, not verified**:
+
+| Area | Value in code | Why it's suspect |
+|------|---------------|------------------|
+| Token endpoint | `POST /auth/token` (Basic auth, `grant_type=client_credentials`) | Likely wrong for server integration — see Authentication |
+| Pix charges | `/pix/charges/static`, `/pix/charges/dynamic`, `/pix/charges/{txid}` | Matera likely follows BCB's `/cob` (immediate) / `/cobv` (dated) naming |
+| Pix payments | `/pix/payments`, `/pix/payments/{e2eid}`, `/pix/payments/{e2eid}/refund` | BCB spec names refunds `/pix/{e2eid}/devolucao/{id}` |
+| DICT lookup | `GET /pix/dict/{key}`, `GET /pix/dict/keys` | BCB DICT is RSFN-gated; Matera exposes its own wrapper. Exact path unknown. |
+| Pix Automático | `POST /pix/automatico` | Almost certainly a placeholder. BCB 2025 spec uses `POST /rec` (recurrence) + `/cobr/{txid}` (recurring charge). |
+
+The 10 tool **names** and **input schemas** above are the public contract and will remain stable. Only the internal HTTP calls in `src/index.ts` will change when we verify against the sandbox. Using this server against a live Matera tenant today will produce 404s on most calls.
+
+Track the verification work in the repo issues; PR welcome from anyone with a Matera sandbox.
 
 ## Roadmap
 
