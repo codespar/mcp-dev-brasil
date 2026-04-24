@@ -9,18 +9,27 @@
  * Zoop or Pagar.me: Getnet is an acquirer, so merchants with a Santander
  * commercial contract integrate directly instead of going through a PSP.
  *
- * Tools (11):
+ * Tools (20):
  *   authorize_credit     — authorize a credit-card payment (optional auto-capture)
  *   capture_credit       — capture a previously authorized credit payment
  *   cancel_credit        — cancel an authorized-but-uncaptured credit payment
  *   refund_credit        — refund a captured credit payment (full or partial)
+ *   cancel_debit         — cancel a debit-card payment
  *   create_pix           — create a Pix charge, returns QR code + copy-paste payload
+ *   query_pix            — retrieve a Pix charge by payment_id
  *   create_boleto        — create a boleto charge
- *   get_payment          — retrieve any payment by id
- *   tokenize_card        — PCI-safe card tokenization for reuse
+ *   query_boleto         — retrieve a boleto by payment_id
+ *   cancel_boleto        — cancel a boleto before payment
+ *   get_payment          — retrieve any payment by payment_id
+ *   get_payment_by_order — retrieve a payment by merchant order_id
+ *   query_installments   — query installment options (amount + brand)
+ *   tokenize_card        — PCI-safe card tokenization for reuse (number_token)
+ *   create_numtoken      — create a numtoken (PAN-level tokenization) for card-on-file
  *   create_seller        — onboard a marketplace seller (Marketplace Management)
  *   get_seller           — retrieve a seller by id
  *   list_sellers         — list marketplace sellers with filters
+ *   create_split         — configure a marketplace split for a subseller
+ *   get_statement        — retrieve marketplace statement entries for a period
  *
  * Authentication
  *   OAuth 2.0 Client Credentials. The server calls POST /auth/oauth/v2/token
@@ -101,7 +110,7 @@ async function getnetRequest(method: string, path: string, body?: unknown): Prom
 }
 
 const server = new Server(
-  { name: "mcp-getnet", version: "0.1.0" },
+  { name: "mcp-getnet", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -330,6 +339,129 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
       },
     },
+    {
+      name: "cancel_debit",
+      description: "Cancel a debit-card payment by Getnet payment_id.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string", description: "Getnet payment_id for the debit transaction" },
+        },
+        required: ["payment_id"],
+      },
+    },
+    {
+      name: "query_pix",
+      description: "Retrieve a Pix charge by Getnet payment_id. Returns current status (PENDING, APPROVED, CANCELED) and, when paid, the Pix end-to-end id.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string", description: "Getnet payment_id returned by create_pix" },
+        },
+        required: ["payment_id"],
+      },
+    },
+    {
+      name: "query_boleto",
+      description: "Retrieve a boleto by Getnet payment_id. Returns current status, bank slip URL and barcode.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string", description: "Getnet payment_id returned by create_boleto" },
+        },
+        required: ["payment_id"],
+      },
+    },
+    {
+      name: "cancel_boleto",
+      description: "Cancel a boleto that has not yet been paid.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string", description: "Getnet payment_id for the boleto" },
+        },
+        required: ["payment_id"],
+      },
+    },
+    {
+      name: "get_payment_by_order",
+      description: "Retrieve a payment using the merchant-side order_id (handy when you've lost the Getnet payment_id).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "Merchant-side order identifier passed at charge creation" },
+        },
+        required: ["order_id"],
+      },
+    },
+    {
+      name: "query_installments",
+      description: "Query the installment plans Getnet offers for a given amount + card brand (with/without interest, max installments, per-installment amount).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          amount: { type: "number", description: "Transaction amount in cents" },
+          brand: { type: "string", description: "Card brand: Visa, Mastercard, Elo, Amex, Hipercard" },
+          number_installments: { type: "number", description: "Optional: a specific installment count to price" },
+        },
+        required: ["amount", "brand"],
+      },
+    },
+    {
+      name: "create_numtoken",
+      description: "Create a numtoken (Getnet card-on-file PAN-level token). Use for recurring or one-click-checkout flows where the merchant stores the numtoken and later hydrates it via tokenize_card to obtain a number_token at authorization time.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          card_number: { type: "string", description: "PAN; never log" },
+          cardholder_name: { type: "string" },
+          expiration_month: { type: "string", description: "MM" },
+          expiration_year: { type: "string", description: "YY" },
+          customer_id: { type: "string", description: "Merchant-side customer id to associate" },
+        },
+        required: ["card_number", "cardholder_name", "expiration_month", "expiration_year", "customer_id"],
+      },
+    },
+    {
+      name: "create_split",
+      description: "Configure a marketplace split rule that routes part of a payment to a subseller. Values are cents; percentages are integers 0-100.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "Merchant-side order identifier" },
+          marketplace_subseller_payments: {
+            type: "array",
+            description: "One entry per subseller receiving a split",
+            items: {
+              type: "object",
+              properties: {
+                subseller_sales_amount: { type: "number", description: "Amount (cents) routed to this subseller" },
+                subseller_rate_amount: { type: "number", description: "Marketplace fee (cents) retained from this subseller" },
+                subseller_id: { type: "string", description: "Getnet seller_id of the subseller" },
+                order_id: { type: "string", description: "Optional subseller-side order id" },
+              },
+              required: ["subseller_sales_amount", "subseller_id"],
+            },
+          },
+        },
+        required: ["order_id", "marketplace_subseller_payments"],
+      },
+    },
+    {
+      name: "get_statement",
+      description: "Retrieve marketplace statement entries (sales, fees, payouts) for a subseller in a date range.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          subseller_id: { type: "string", description: "Getnet subseller_id" },
+          start_date: { type: "string", description: "YYYY-MM-DD start of period (inclusive)" },
+          end_date: { type: "string", description: "YYYY-MM-DD end of period (inclusive)" },
+          page: { type: "number", description: "Page number (starts at 1)" },
+          limit: { type: "number", description: "Page size" },
+        },
+        required: ["subseller_id", "start_date", "end_date"],
+      },
+    },
   ],
 }));
 
@@ -387,6 +519,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (a?.status) params.set("status", String(a.status));
         return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("GET", `/v1/mgm/sellers?${params}`), null, 2) }] };
       }
+      case "cancel_debit": {
+        const paymentId = (args as { payment_id: string }).payment_id;
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("POST", `/v1/payments/debit/${paymentId}/cancel`), null, 2) }] };
+      }
+      case "query_pix": {
+        const paymentId = (args as { payment_id: string }).payment_id;
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("GET", `/v1/payments/qrcode/pix/${paymentId}`), null, 2) }] };
+      }
+      case "query_boleto": {
+        const paymentId = (args as { payment_id: string }).payment_id;
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("GET", `/v1/payments/boleto/${paymentId}`), null, 2) }] };
+      }
+      case "cancel_boleto": {
+        const paymentId = (args as { payment_id: string }).payment_id;
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("POST", `/v1/payments/boleto/${paymentId}/cancel`), null, 2) }] };
+      }
+      case "get_payment_by_order": {
+        const orderId = (args as { order_id: string }).order_id;
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("GET", `/v1/payments?order_id=${encodeURIComponent(orderId)}`), null, 2) }] };
+      }
+      case "query_installments": {
+        const a = args as { amount: number; brand: string; number_installments?: number };
+        const params = new URLSearchParams();
+        params.set("amount", String(a.amount));
+        params.set("brand", a.brand);
+        if (a.number_installments !== undefined) params.set("number_installments", String(a.number_installments));
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("GET", `/v1/installments?${params}`), null, 2) }] };
+      }
+      case "create_numtoken":
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("POST", "/v1/tokens/numtoken", args), null, 2) }] };
+      case "create_split": {
+        const body = { ...(args as Record<string, unknown>), marketplace_id: SELLER_ID };
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("POST", "/v1/mgm/split", body), null, 2) }] };
+      }
+      case "get_statement": {
+        const a = args as { subseller_id: string; start_date: string; end_date: string; page?: number; limit?: number };
+        const params = new URLSearchParams();
+        params.set("subseller_id", a.subseller_id);
+        params.set("start_date", a.start_date);
+        params.set("end_date", a.end_date);
+        if (a.page !== undefined) params.set("page", String(a.page));
+        if (a.limit !== undefined) params.set("limit", String(a.limit));
+        return { content: [{ type: "text", text: JSON.stringify(await getnetRequest("GET", `/v1/mgm/statement?${params}`), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -409,7 +585,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-getnet", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-getnet", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);
