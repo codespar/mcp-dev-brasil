@@ -49,17 +49,57 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 }
 ```
 
-## Tools
+## Tools (20)
 
+### Invoices
 | Tool | Description |
 |------|-------------|
-| `create_invoice` | Create an invoice in iugu (Pix, boleto, or credit card) |
+| `create_invoice` | Create an invoice (Pix, boleto, or credit card) |
 | `get_invoice` | Get invoice details by ID |
 | `list_invoices` | List invoices with optional filters |
-| `create_customer` | Create a customer in iugu |
+| `cancel_invoice` | Cancel (delete) an invoice |
+| `refund_invoice` | Full or partial refund on a paid invoice |
+| `duplicate_invoice` | Duplicate an invoice with a new due date |
+
+### Customers
+| Tool | Description |
+|------|-------------|
+| `create_customer` | Create a customer |
+| `update_customer` | Update customer data (PUT) |
 | `list_customers` | List customers with optional filters |
-| `create_subscription` | Create a recurring subscription in iugu |
-| `create_payment_method` | Create a payment method (credit card token) for a customer |
+
+### Plans (recurring templates)
+| Tool | Description |
+|------|-------------|
+| `create_plan` | Create a subscription plan |
+| `update_plan` | Update an existing plan |
+| `list_plans` | List subscription plans |
+
+### Subscriptions
+| Tool | Description |
+|------|-------------|
+| `create_subscription` | Create a recurring subscription |
+| `suspend_subscription` | Suspend a subscription |
+| `activate_subscription` | Reactivate a suspended subscription |
+| `cancel_subscription` | Cancel (delete) a subscription |
+
+### Payment Tokens & Methods
+| Tool | Description |
+|------|-------------|
+| `create_payment_token` | Tokenize a card server-side (PCI audit applies) |
+| `create_payment_method` | Attach a saved payment method to a customer |
+
+### Marketplace & Payouts
+| Tool | Description |
+|------|-------------|
+| `create_subaccount` | Create a marketplace sub-account |
+| `create_transfer` | Transfer funds between iugu accounts |
+| `request_withdraw` | Request a bank withdrawal (saque) for a sub-account |
+
+### Webhooks & Account
+| Tool | Description |
+|------|-------------|
+| `create_webhook` | Register a webhook (gatilho) for an iugu event |
 | `get_account_info` | Get account information, configuration, and balance |
 
 ## Authentication
@@ -86,17 +126,12 @@ iugu provides test mode via the dashboard. Use a test-mode API token to avoid re
 
 ## Roadmap
 
-### v0.2 (planned)
-- `create_plan` — Create a subscription plan
-- `list_plans` — List all subscription plans
-- `create_marketplace_account` — Create a marketplace sub-account
-- `get_financial_report` — Get financial summary report
-- `list_payment_methods` — List available payment methods for a customer
-
 ### v0.3 (planned)
 - `create_split` — Create split payment rules
-- `get_transfers` — List marketplace transfers
+- `list_transfers` — List marketplace transfers
+- `get_financial_report` — Financial summary report
 - `batch_invoices` — Create multiple invoices in a single request
+- `list_payment_methods` — List saved payment methods for a customer
 
 Want to contribute? [Open a PR](https://github.com/codespar/mcp-dev-brasil) or [request a tool](https://github.com/codespar/mcp-dev-brasil/issues).
 
