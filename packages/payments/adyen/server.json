@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-adyen",
+  "description": "MCP server for Adyen Checkout API v71 — global enterprise payments used by iFood, Uber, Spotify in LatAm",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/payments/adyen"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-adyen",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ADYEN_API_KEY",
+          "description": "Adyen API key (generated in Customer Area → Developers → API credentials)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "ADYEN_MERCHANT_ACCOUNT",
+          "description": "Adyen merchant account code (appears in most request bodies)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "ADYEN_ENV",
+          "description": "test | live. Defaults to test.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "ADYEN_LIVE_URL_PREFIX",
+          "description": "Required when ADYEN_ENV=live. Your merchant-specific prefix, e.g. 1797a841fbb37ca7-AdyenDemo",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

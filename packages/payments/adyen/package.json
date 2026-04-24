@@ -1,0 +1,33 @@
+{
+  "name": "@codespar/mcp-adyen",
+  "version": "0.1.0",
+  "description": "MCP server for Adyen Checkout API v71 — global enterprise payments used by iFood, Uber, Spotify in LatAm",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-adyen": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "adyen",
+    "payments",
+    "checkout",
+    "enterprise",
+    "global",
+    "cards",
+    "payment-methods"
+  ],
+  "mcpName": "io.github.codespar/mcp-adyen"
+}
