@@ -3,21 +3,35 @@
 /**
  * MCP Server for Mercado Libre — largest LATAM marketplace.
  *
- * Tools:
+ * Tools (22):
+ * Catalog & search
  * - search_products: Search products in Mercado Libre
  * - get_product: Get product details by ID
  * - get_product_description: Get product description
  * - list_categories: List marketplace categories
  * - get_category: Get category details
+ * - predict_category: Predict category from product title (domain_discovery)
+ * - get_trends: Get trending searches by site
+ * Listings & inventory
+ * - list_listings: List seller's active listings
+ * - update_item: Update item fields (stock, status, price, etc.)
+ * Orders & sellers
  * - get_seller: Get seller information
  * - list_orders: List seller orders
  * - get_order: Get order details
- * - get_shipment: Get shipment tracking
+ * - get_user: Get authenticated user info
+ * Shipping
+ * - get_shipment: Get shipment details
+ * - get_shipment_history: Get shipment tracking history
+ * - get_shipping_label: Get shipping label (PDF/ZPL) for shipments
+ * Q&A and messaging
  * - list_questions: List product questions
  * - answer_question: Answer a product question
- * - get_user: Get authenticated user info
- * - list_listings: List seller's active listings
- * - get_trends: Get trending searches by site
+ * - list_messages: List post-sale messages for an order pack
+ * - send_message: Send post-sale message to buyer
+ * Reviews & promotions
+ * - list_reviews: List reviews for an item
+ * - create_promotion: Create a price discount promotion on an item
  *
  * Environment:
  *   MELI_ACCESS_TOKEN — OAuth2 access token
@@ -54,7 +68,7 @@ async function meliRequest(method: string, path: string, body?: unknown): Promis
 }
 
 const server = new Server(
-  { name: "mcp-mercado-libre", version: "0.1.0" },
+  { name: "mcp-mercado-libre", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -110,6 +124,54 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "predict_category",
+      description: "Predict the best category for a product title (domain_discovery)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Product title (ideally in the site language)" },
+          limit: { type: "number", description: "Max predictions to return" },
+        },
+        required: ["title"],
+      },
+    },
+    {
+      name: "get_trends",
+      description: "Get trending searches in the marketplace",
+      inputSchema: {
+        type: "object",
+        properties: { category: { type: "string", description: "Category ID (optional)" } },
+      },
+    },
+    {
+      name: "list_listings",
+      description: "List seller's active product listings",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sellerId: { type: "string", description: "Seller ID (uses authenticated user if omitted)" },
+          status: { type: "string", enum: ["active", "paused", "closed"], description: "Listing status" },
+          limit: { type: "number", description: "Results limit" },
+        },
+      },
+    },
+    {
+      name: "update_item",
+      description: "Update item fields such as available_quantity (stock), status (active/paused/closed), price, or title",
+      inputSchema: {
+        type: "object",
+        properties: {
+          itemId: { type: "string", description: "Item ID (e.g. MLB1234567890)" },
+          available_quantity: { type: "number", description: "Stock quantity" },
+          status: { type: "string", enum: ["active", "paused", "closed"], description: "Listing status (lowercase)" },
+          price: { type: "number", description: "New price" },
+          title: { type: "string", description: "New title (only allowed if item has no sales)" },
+          fields: { type: "object", description: "Arbitrary extra fields to send in the PUT body", additionalProperties: true },
+        },
+        required: ["itemId"],
+      },
+    },
+    {
       name: "get_seller",
       description: "Get seller information and reputation",
       inputSchema: {
@@ -141,12 +203,38 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_user",
+      description: "Get authenticated user information",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
       name: "get_shipment",
-      description: "Get shipment tracking details",
+      description: "Get shipment details",
       inputSchema: {
         type: "object",
         properties: { shipmentId: { type: "string", description: "Shipment ID" } },
         required: ["shipmentId"],
+      },
+    },
+    {
+      name: "get_shipment_history",
+      description: "Get tracking history (status changes) for a shipment",
+      inputSchema: {
+        type: "object",
+        properties: { shipmentId: { type: "string", description: "Shipment ID" } },
+        required: ["shipmentId"],
+      },
+    },
+    {
+      name: "get_shipping_label",
+      description: "Get shipping labels (PDF or ZPL) for one or more shipments. Returns the raw response URL; caller is expected to download binary.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          shipmentIds: { type: "array", items: { type: "string" }, description: "Shipment IDs (max 50)" },
+          format: { type: "string", enum: ["pdf", "zpl2"], description: "Label format (default: pdf)" },
+        },
+        required: ["shipmentIds"],
       },
     },
     {
@@ -174,28 +262,57 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "get_user",
-      description: "Get authenticated user information",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "list_listings",
-      description: "List seller's active product listings",
+      name: "list_messages",
+      description: "List post-sale conversation messages between seller and buyer for an order pack",
       inputSchema: {
         type: "object",
         properties: {
-          sellerId: { type: "string", description: "Seller ID (uses authenticated user if omitted)" },
-          status: { type: "string", enum: ["active", "paused", "closed"], description: "Listing status" },
-          limit: { type: "number", description: "Results limit" },
+          packId: { type: "string", description: "Pack ID (or order ID if no pack)" },
+          sellerId: { type: "string", description: "Seller user ID" },
+          markAsRead: { type: "boolean", description: "Whether to mark messages as read (default: false)" },
         },
+        required: ["packId", "sellerId"],
       },
     },
     {
-      name: "get_trends",
-      description: "Get trending searches in the marketplace",
+      name: "send_message",
+      description: "Send a post-sale message to the buyer associated with an order pack",
       inputSchema: {
         type: "object",
-        properties: { category: { type: "string", description: "Category ID (optional)" } },
+        properties: {
+          packId: { type: "string", description: "Pack ID (or order ID if no pack)" },
+          sellerId: { type: "string", description: "Seller user ID (sender)" },
+          buyerId: { type: "string", description: "Buyer user ID (recipient)" },
+          text: { type: "string", description: "Message text" },
+          textTranslated: { type: "string", description: "Message text translated to buyer language (optional)" },
+          attachments: { type: "array", items: { type: "string" }, description: "Attachment file IDs from upload endpoint (optional)" },
+        },
+        required: ["packId", "sellerId", "buyerId", "text"],
+      },
+    },
+    {
+      name: "list_reviews",
+      description: "List reviews and rating average for a product",
+      inputSchema: {
+        type: "object",
+        properties: { itemId: { type: "string", description: "Item ID" } },
+        required: ["itemId"],
+      },
+    },
+    {
+      name: "create_promotion",
+      description: "Create a price discount promotion for an item (PRICE_DISCOUNT)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          itemId: { type: "string", description: "Item ID" },
+          dealPrice: { type: "number", description: "Discounted price for all buyers" },
+          topDealPrice: { type: "number", description: "Discounted price for top buyers (optional)" },
+          startDate: { type: "string", description: "ISO 8601 start date" },
+          finishDate: { type: "string", description: "ISO 8601 finish date" },
+          promotionType: { type: "string", description: "Promotion type (default: PRICE_DISCOUNT)" },
+        },
+        required: ["itemId", "dealPrice", "startDate", "finishDate"],
       },
     },
   ],
@@ -225,6 +342,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/sites/${SITE_ID}/categories`), null, 2) }] };
       case "get_category":
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/categories/${args?.categoryId}`), null, 2) }] };
+      case "predict_category": {
+        const params = new URLSearchParams();
+        params.set("q", String(args?.title || ""));
+        if (args?.limit) params.set("limit", String(args.limit));
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/sites/${SITE_ID}/domain_discovery/search?${params}`), null, 2) }] };
+      }
+      case "get_trends": {
+        const path = args?.category ? `/trends/${SITE_ID}/${args.category}` : `/trends/${SITE_ID}`;
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", path), null, 2) }] };
+      }
+      case "list_listings": {
+        const userId = args?.sellerId || "me";
+        const params = new URLSearchParams();
+        if (args?.status) params.set("status", String(args.status));
+        if (args?.limit) params.set("limit", String(args.limit));
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/users/${userId}/items/search?${params}`), null, 2) }] };
+      }
+      case "update_item": {
+        const body: Record<string, unknown> = { ...(args?.fields ?? {}) };
+        if (args?.available_quantity !== undefined) body.available_quantity = args.available_quantity;
+        if (args?.status !== undefined) body.status = args.status;
+        if (args?.price !== undefined) body.price = args.price;
+        if (args?.title !== undefined) body.title = args.title;
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("PUT", `/items/${args?.itemId}`, body), null, 2) }] };
+      }
       case "get_seller":
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/users/${args?.sellerId}`), null, 2) }] };
       case "list_orders": {
@@ -237,8 +379,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       }
       case "get_order":
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/orders/${args?.orderId}`), null, 2) }] };
+      case "get_user":
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", "/users/me"), null, 2) }] };
       case "get_shipment":
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/shipments/${args?.shipmentId}`), null, 2) }] };
+      case "get_shipment_history":
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/shipments/${args?.shipmentId}/history`), null, 2) }] };
+      case "get_shipping_label": {
+        const ids = Array.isArray(args?.shipmentIds) ? (args!.shipmentIds as string[]).join(",") : String(args?.shipmentIds || "");
+        const format = args?.format || "pdf";
+        const params = new URLSearchParams();
+        params.set("shipment_ids", ids);
+        params.set("response_type", String(format));
+        // Label endpoint returns binary; surface the URL so the caller can download it with the token.
+        const url = `${BASE_URL}/shipment_labels?${params.toString()}`;
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              url,
+              method: "GET",
+              note: "Authenticated GET; response is binary (PDF) or ZIP with ZPL+PLP. Use MELI_ACCESS_TOKEN as Bearer.",
+              format,
+              shipment_ids: ids.split(","),
+            }, null, 2),
+          }],
+        };
+      }
       case "list_questions": {
         const params = new URLSearchParams();
         params.set("item", String(args?.itemId));
@@ -247,18 +414,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       }
       case "answer_question":
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("POST", `/answers`, { question_id: args?.questionId, text: args?.text }), null, 2) }] };
-      case "get_user":
-        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", "/users/me"), null, 2) }] };
-      case "list_listings": {
-        const userId = args?.sellerId || "me";
+      case "list_messages": {
         const params = new URLSearchParams();
-        if (args?.status) params.set("status", String(args.status));
-        if (args?.limit) params.set("limit", String(args.limit));
-        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/users/${userId}/items/search?${params}`), null, 2) }] };
-      }
-      case "get_trends": {
-        const path = args?.category ? `/trends/${SITE_ID}/${args.category}` : `/trends/${SITE_ID}`;
+        if (args?.markAsRead === false || args?.markAsRead === undefined) params.set("mark_as_read", "false");
+        const qs = params.toString();
+        const path = `/messages/packs/${args?.packId}/sellers/${args?.sellerId}${qs ? `?${qs}` : ""}`;
         return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", path), null, 2) }] };
+      }
+      case "send_message": {
+        const body: Record<string, unknown> = {
+          from: { user_id: String(args?.sellerId) },
+          to: { user_id: String(args?.buyerId) },
+          text: String(args?.text || ""),
+        };
+        if (args?.textTranslated) body.text_translated = String(args.textTranslated);
+        if (Array.isArray(args?.attachments) && args.attachments.length > 0) body.attachments = args.attachments;
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("POST", `/marketplace/messages/packs/${args?.packId}`, body), null, 2) }] };
+      }
+      case "list_reviews":
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("GET", `/reviews/item/${args?.itemId}`), null, 2) }] };
+      case "create_promotion": {
+        const body = {
+          deal_price: args?.dealPrice,
+          top_deal_price: args?.topDealPrice,
+          start_date: args?.startDate,
+          finish_date: args?.finishDate,
+          promotion_type: args?.promotionType || "PRICE_DISCOUNT",
+        };
+        return { content: [{ type: "text", text: JSON.stringify(await meliRequest("POST", `/seller-promotions/items/${args?.itemId}?app_version=v2`, body), null, 2) }] };
       }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
@@ -282,7 +465,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-mercado-libre", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-mercado-libre", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
