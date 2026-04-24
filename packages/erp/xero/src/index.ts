@@ -9,19 +9,31 @@
  * agents can manage contacts, issue invoices, record payments, and pull
  * financial reports for companies operating outside (or alongside) Brazil.
  *
- * Tools (12):
- *   create_contact      — POST /Contacts
- *   get_contact         — GET  /Contacts/{ContactID}
- *   list_contacts       — GET  /Contacts (optional where clause)
- *   create_invoice      — POST /Invoices
- *   get_invoice         — GET  /Invoices/{InvoiceID}
- *   list_invoices       — GET  /Invoices (optional where clause)
- *   email_invoice       — POST /Invoices/{InvoiceID}/Email
- *   create_payment      — POST /Payments
- *   create_item         — POST /Items
- *   list_items          — GET  /Items
- *   list_accounts       — GET  /Accounts
- *   get_balance_sheet   — GET  /Reports/BalanceSheet
+ * Tools (24):
+ *   create_contact           — POST /Contacts
+ *   get_contact              — GET  /Contacts/{ContactID}
+ *   list_contacts            — GET  /Contacts (optional where clause)
+ *   update_contact           — POST /Contacts/{ContactID}
+ *   archive_contact          — POST /Contacts/{ContactID} (ContactStatus=ARCHIVED)
+ *   create_invoice           — POST /Invoices
+ *   get_invoice              — GET  /Invoices/{InvoiceID}
+ *   list_invoices            — GET  /Invoices (optional where clause)
+ *   update_invoice           — POST /Invoices/{InvoiceID}
+ *   void_invoice             — POST /Invoices/{InvoiceID} (Status=VOIDED)
+ *   email_invoice            — POST /Invoices/{InvoiceID}/Email
+ *   create_payment           — PUT  /Payments
+ *   get_payment              — GET  /Payments/{PaymentID}
+ *   list_payments            — GET  /Payments
+ *   create_bank_transaction  — PUT  /BankTransactions
+ *   list_bank_transactions   — GET  /BankTransactions
+ *   create_item              — POST /Items
+ *   list_items               — GET  /Items
+ *   list_accounts            — GET  /Accounts
+ *   list_organisations       — GET  /Organisation
+ *   list_tax_rates           — GET  /TaxRates
+ *   create_credit_note       — PUT  /CreditNotes
+ *   list_credit_notes        — GET  /CreditNotes
+ *   get_balance_sheet        — GET  /Reports/BalanceSheet
  *
  * Authentication
  *   OAuth2 Bearer. Every request sends:
@@ -89,7 +101,7 @@ async function xeroRequest(
 }
 
 const server = new Server(
-  { name: "mcp-xero", version: "0.1.0" },
+  { name: "mcp-xero", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -283,6 +295,188 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "update_contact",
+      description: "Update an existing Xero contact. POSTs to /Contacts/{ContactID}. Only include fields you want changed; Xero merges updates.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ContactID: { type: "string", description: "Xero Contact UUID to update." },
+          Name: { type: "string", description: "Updated name (must remain unique within tenant)." },
+          FirstName: { type: "string", description: "Contact first name." },
+          LastName: { type: "string", description: "Contact last name." },
+          EmailAddress: { type: "string", description: "Primary email address." },
+          ContactNumber: { type: "string", description: "External system identifier." },
+          AccountNumber: { type: "string", description: "Merchant-side account number." },
+          TaxNumber: { type: "string", description: "Tax number (VAT/ABN/GST/EIN)." },
+          Addresses: { type: "array", description: "Addresses array (replaces existing)." },
+          Phones: { type: "array", description: "Phones array (replaces existing)." },
+          DefaultCurrency: { type: "string", description: "ISO-4217 default currency." },
+        },
+        required: ["ContactID"],
+      },
+    },
+    {
+      name: "archive_contact",
+      description: "Archive a Xero contact by setting ContactStatus=ARCHIVED. Archived contacts are hidden from default lists but history is preserved.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ContactID: { type: "string", description: "Xero Contact UUID to archive." },
+        },
+        required: ["ContactID"],
+      },
+    },
+    {
+      name: "update_invoice",
+      description: "Update an existing invoice. POSTs to /Invoices/{InvoiceID}. DRAFT/SUBMITTED invoices are fully editable; AUTHORISED invoices have limited editable fields (Reference, DueDate, etc).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          InvoiceID: { type: "string", description: "Xero Invoice UUID to update." },
+          LineItems: { type: "array", description: "Replacement line items array." },
+          Date: { type: "string", description: "Invoice date YYYY-MM-DD." },
+          DueDate: { type: "string", description: "Payment due date YYYY-MM-DD." },
+          Reference: { type: "string", description: "Free-text reference." },
+          Status: { type: "string", enum: ["DRAFT", "SUBMITTED", "AUTHORISED", "VOIDED"], description: "New invoice status." },
+          LineAmountTypes: { type: "string", enum: ["Exclusive", "Inclusive", "NoTax"], description: "Tax treatment for line amounts." },
+          InvoiceNumber: { type: "string", description: "Merchant invoice number." },
+        },
+        required: ["InvoiceID"],
+      },
+    },
+    {
+      name: "void_invoice",
+      description: "Void an invoice by setting Status=VOIDED. Only DRAFT, SUBMITTED, or AUTHORISED invoices with zero payments can be voided.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          InvoiceID: { type: "string", description: "Xero Invoice UUID to void." },
+        },
+        required: ["InvoiceID"],
+      },
+    },
+    {
+      name: "get_payment",
+      description: "Retrieve a single payment by PaymentID.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          PaymentID: { type: "string", description: "Xero Payment UUID." },
+        },
+        required: ["PaymentID"],
+      },
+    },
+    {
+      name: "list_payments",
+      description: "List payments recorded in Xero. Supports where-clause filtering (e.g. 'Status==\"AUTHORISED\"', 'Date>=DateTime(2026,1,1)').",
+      inputSchema: {
+        type: "object",
+        properties: {
+          where: { type: "string", description: "Xero where clause." },
+          order: { type: "string", description: "Ordering, e.g. 'Date DESC'." },
+          page: { type: "number", description: "Page number (100 per page)." },
+        },
+      },
+    },
+    {
+      name: "create_bank_transaction",
+      description: "Create a bank transaction (SPEND = money out, RECEIVE = money in) directly on a bank account — for transactions without a matching invoice/bill (fees, transfers, one-off expenses).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          Type: { type: "string", enum: ["SPEND", "RECEIVE", "SPEND-OVERPAYMENT", "RECEIVE-OVERPAYMENT", "SPEND-PREPAYMENT", "RECEIVE-PREPAYMENT", "SPEND-TRANSFER", "RECEIVE-TRANSFER"], description: "Transaction type. SPEND/RECEIVE are the common values." },
+          Contact: {
+            type: "object",
+            description: "Contact reference — provide ContactID.",
+            properties: { ContactID: { type: "string", description: "Xero Contact UUID." } },
+            required: ["ContactID"],
+          },
+          BankAccount: {
+            type: "object",
+            description: "Bank account reference — provide AccountID or Code.",
+            properties: {
+              AccountID: { type: "string", description: "Xero Account UUID (Type=BANK)." },
+              Code: { type: "string", description: "Account code (alternative to AccountID)." },
+            },
+          },
+          LineItems: { type: "array", description: "Array of line items (Description, Quantity, UnitAmount, AccountCode, TaxType)." },
+          Date: { type: "string", description: "Transaction date YYYY-MM-DD." },
+          Reference: { type: "string", description: "Free-text reference." },
+          IsReconciled: { type: "boolean", description: "Mark as reconciled on creation." },
+          CurrencyCode: { type: "string", description: "ISO-4217 currency code." },
+          LineAmountTypes: { type: "string", enum: ["Exclusive", "Inclusive", "NoTax"], description: "Line amount tax treatment." },
+        },
+        required: ["Type", "Contact", "BankAccount", "LineItems"],
+      },
+    },
+    {
+      name: "list_bank_transactions",
+      description: "List bank transactions (spend/receive entries on bank accounts). Supports where-clause filtering by BankAccount.AccountID, Type, Date, etc.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          where: { type: "string", description: "Xero where clause, e.g. 'BankAccount.AccountID==guid(\"...\")'." },
+          order: { type: "string", description: "Ordering, e.g. 'Date DESC'." },
+          page: { type: "number", description: "Page number (100 per page)." },
+        },
+      },
+    },
+    {
+      name: "list_organisations",
+      description: "Retrieve the Xero organisation(s) the access token has access to — returns name, base currency, country, fiscal year start, tax settings, and edition.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "list_tax_rates",
+      description: "List tax rates configured in the Xero tenant. Use the returned TaxType codes on invoice/bill line items. Supports where clause like 'Status==\"ACTIVE\"'.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          where: { type: "string", description: "Xero where clause, e.g. 'Status==\"ACTIVE\"'." },
+          order: { type: "string", description: "Ordering, e.g. 'Name ASC'." },
+        },
+      },
+    },
+    {
+      name: "create_credit_note",
+      description: "Create a credit note. Type ACCRECCREDIT = credit to a customer (offsets an AR invoice), ACCPAYCREDIT = credit from a supplier (offsets an AP bill).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          Type: { type: "string", enum: ["ACCRECCREDIT", "ACCPAYCREDIT"], description: "ACCRECCREDIT (customer credit) or ACCPAYCREDIT (supplier credit)." },
+          Contact: {
+            type: "object",
+            description: "Contact reference — provide ContactID.",
+            properties: { ContactID: { type: "string", description: "Xero Contact UUID." } },
+            required: ["ContactID"],
+          },
+          LineItems: { type: "array", description: "Array of line items (Description, Quantity, UnitAmount, AccountCode, TaxType)." },
+          Date: { type: "string", description: "Credit note date YYYY-MM-DD." },
+          Status: { type: "string", enum: ["DRAFT", "SUBMITTED", "AUTHORISED"], description: "Credit note status. Defaults to DRAFT." },
+          CreditNoteNumber: { type: "string", description: "Merchant credit note number (auto-assigned for ACCRECCREDIT if omitted)." },
+          Reference: { type: "string", description: "Free-text reference." },
+          CurrencyCode: { type: "string", description: "ISO-4217 currency." },
+          LineAmountTypes: { type: "string", enum: ["Exclusive", "Inclusive", "NoTax"], description: "Line amount tax treatment." },
+        },
+        required: ["Type", "Contact", "LineItems"],
+      },
+    },
+    {
+      name: "list_credit_notes",
+      description: "List credit notes. Supports where-clause filtering by Type, Status, Contact.ContactID, Date.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          where: { type: "string", description: "Xero where clause, e.g. 'Type==\"ACCRECCREDIT\" AND Status==\"AUTHORISED\"'." },
+          order: { type: "string", description: "Ordering, e.g. 'Date DESC'." },
+          page: { type: "number", description: "Page number (100 per page)." },
+        },
+      },
+    },
+    {
       name: "get_balance_sheet",
       description: "Retrieve the Balance Sheet report for the tenant. Returns assets, liabilities, and equity grouped by account as of a given date.",
       inputSchema: {
@@ -347,6 +541,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/Accounts", undefined, {
           query: { where: a.where as string | undefined, order: a.order as string | undefined },
         }), null, 2) }] };
+      case "update_contact": {
+        const { ContactID, ...rest } = a;
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("POST", `/Contacts/${ContactID}`, { Contacts: [rest] }), null, 2) }] };
+      }
+      case "archive_contact":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("POST", `/Contacts/${a.ContactID}`, { Contacts: [{ ContactStatus: "ARCHIVED" }] }), null, 2) }] };
+      case "update_invoice": {
+        const { InvoiceID, ...rest } = a;
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("POST", `/Invoices/${InvoiceID}`, { Invoices: [rest] }), null, 2) }] };
+      }
+      case "void_invoice":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("POST", `/Invoices/${a.InvoiceID}`, { Invoices: [{ Status: "VOIDED" }] }), null, 2) }] };
+      case "get_payment":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", `/Payments/${a.PaymentID}`), null, 2) }] };
+      case "list_payments":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/Payments", undefined, {
+          query: {
+            where: a.where as string | undefined,
+            order: a.order as string | undefined,
+            page: a.page !== undefined ? String(a.page) : undefined,
+          },
+        }), null, 2) }] };
+      case "create_bank_transaction":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("PUT", "/BankTransactions", { BankTransactions: [a] }), null, 2) }] };
+      case "list_bank_transactions":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/BankTransactions", undefined, {
+          query: {
+            where: a.where as string | undefined,
+            order: a.order as string | undefined,
+            page: a.page !== undefined ? String(a.page) : undefined,
+          },
+        }), null, 2) }] };
+      case "list_organisations":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/Organisation"), null, 2) }] };
+      case "list_tax_rates":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/TaxRates", undefined, {
+          query: { where: a.where as string | undefined, order: a.order as string | undefined },
+        }), null, 2) }] };
+      case "create_credit_note":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("PUT", "/CreditNotes", { CreditNotes: [a] }), null, 2) }] };
+      case "list_credit_notes":
+        return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/CreditNotes", undefined, {
+          query: {
+            where: a.where as string | undefined,
+            order: a.order as string | undefined,
+            page: a.page !== undefined ? String(a.page) : undefined,
+          },
+        }), null, 2) }] };
       case "get_balance_sheet":
         return { content: [{ type: "text", text: JSON.stringify(await xeroRequest("GET", "/Reports/BalanceSheet", undefined, {
           query: {
@@ -381,7 +623,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-xero", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-xero", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);
