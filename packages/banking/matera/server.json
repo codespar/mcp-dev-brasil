@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-matera",
+  "description": "MCP server for Matera — Brazilian core-banking infrastructure (BaaS) for fintechs building on top of Pix, DICT, and Pix Automático",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/banking/matera"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-matera",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MATERA_CLIENT_ID",
+          "description": "OAuth2 client_id issued by Matera",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MATERA_CLIENT_SECRET",
+          "description": "OAuth2 client_secret issued by Matera",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "MATERA_BASE_URL",
+          "description": "API base URL. Defaults to https://api.matera.com (production)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

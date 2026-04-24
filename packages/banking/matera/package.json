@@ -1,0 +1,35 @@
+{
+  "name": "@codespar/mcp-matera",
+  "version": "0.1.0",
+  "description": "MCP server for Matera — Brazilian core-banking infrastructure (BaaS) for fintechs building on top of Pix, DICT, and Pix Automático",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-matera": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "matera",
+    "banking",
+    "baas",
+    "core-banking",
+    "pix",
+    "pix-automatico",
+    "dict",
+    "brazil",
+    "fintech"
+  ],
+  "mcpName": "io.github.codespar/mcp-matera"
+}
