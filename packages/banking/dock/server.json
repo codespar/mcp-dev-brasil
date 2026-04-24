@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-dock",
+  "description": "MCP server for Dock — Brazilian Banking-as-a-Service (accounts, Pix, card issuing) for fintechs and embedded-finance products",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/banking/dock"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-dock",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DOCK_CLIENT_ID",
+          "description": "OAuth2 client_id issued by Dock",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "DOCK_CLIENT_SECRET",
+          "description": "OAuth2 client_secret issued by Dock",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "DOCK_ENV",
+          "description": "Environment: sandbox or production. Defaults to sandbox.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

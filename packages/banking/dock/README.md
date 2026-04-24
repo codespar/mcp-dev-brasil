@@ -1,0 +1,151 @@
+# @codespar/mcp-dock
+
+> MCP server for **Dock** — Brazilian Banking-as-a-Service (accounts, Pix, card issuing) for fintechs and embedded-finance products
+
+[![npm](https://img.shields.io/npm/v/@codespar/mcp-dock)](https://www.npmjs.com/package/@codespar/mcp-dock)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+## Why Dock
+
+Dock is one of the two dominant BaaS providers in Brazil. Together with Matera, they power most BR fintechs.
+
+**Matera vs Dock — pick one, same commerce patterns:**
+
+| | Matera | Dock |
+|---|---|---|
+| Core strength | Pix-focused core banking | Broader BaaS: accounts + Pix + **card issuing** |
+| Historical root | Core-banking platform | Card-issuing platform that expanded into accounts + Pix |
+| Typical customer | Fintech building on top of Pix | Fintech / retailer issuing branded cards + accounts |
+| Pix Automático | Live (2025 BCB product) | Roadmap |
+
+BR fintechs usually pick one based on contract terms and pricing. **Agents building fintech products can target both — the commerce patterns are identical; only the vendor relationship changes.** This server exposes Dock's surface in the same shape as `@codespar/mcp-matera` so an agent can swap backends without rewriting tool-call logic.
+
+Use Dock when an agent needs to:
+- Spin up **digital accounts** for end users (CPF holders)
+- Move money via Pix (charges, transfers, DICT, refunds)
+- **Issue cards** (debit / credit / prepaid / virtual) against those accounts — Dock's key differentiator
+
+## Quick Start
+
+### Claude Desktop
+
+Add to `~/.config/claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "dock": {
+      "command": "npx",
+      "args": ["-y", "@codespar/mcp-dock"],
+      "env": {
+        "DOCK_CLIENT_ID": "your-client-id",
+        "DOCK_CLIENT_SECRET": "your-client-secret",
+        "DOCK_ENV": "sandbox"
+      }
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add dock -- npx @codespar/mcp-dock
+```
+
+### Cursor / VS Code
+
+Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "dock": {
+      "command": "npx",
+      "args": ["-y", "@codespar/mcp-dock"],
+      "env": {
+        "DOCK_CLIENT_ID": "your-client-id",
+        "DOCK_CLIENT_SECRET": "your-client-secret",
+        "DOCK_ENV": "sandbox"
+      }
+    }
+  }
+}
+```
+
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| `create_account` | Open a digital account for an end user |
+| `get_account` | Retrieve account balance, status, coordinates |
+| `send_pix` | Outbound Pix transfer from a Dock account |
+| `get_pix` | Retrieve Pix payment by endToEndId |
+| `create_pix_qr_static` | Reusable Pix QR (points-of-sale, donations) |
+| `create_pix_qr_dynamic` | Single-use expiring Pix QR (e-commerce checkouts) |
+| `refund_pix` | Refund (devolução) a Pix payment |
+| `resolve_dict_key` | DICT lookup — resolve Pix key to account holder |
+| `issue_card` | Issue debit / credit / prepaid / virtual card — Dock's differentiator |
+| `get_card` | Retrieve card status, masked PAN, limits |
+
+## Authentication
+
+OAuth 2.0 Client Credentials. The server calls `POST /oauth/token` with Basic auth (`client_id:client_secret`) and caches the bearer token in memory until a minute before expiry.
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DOCK_CLIENT_ID` | Yes | OAuth2 client_id issued by Dock |
+| `DOCK_CLIENT_SECRET` | Yes | OAuth2 client_secret (secret) |
+| `DOCK_ENV` | No | `sandbox` (default) or `production` |
+
+Base URL is derived from `DOCK_ENV`: `https://sandbox.api.dock.tech` (sandbox) or `https://api.dock.tech` (production).
+
+## Status
+
+**v0.1.0-alpha.1 — tool surface is stable, wire paths are NOT yet verified.**
+
+Dock's developer portal at [developers.dock.tech](https://developers.dock.tech) redirects to a ReadMe.com login gate. Public docs are not accessible without a Dock merchant contract, so on 2026-04-21 we could not validate the exact URL paths.
+
+The endpoint paths in `src/index.ts` follow **standard BR BaaS conventions** (matching Matera's shape and the BCB Pix spec) and are best-guesses. Known-suspect items are flagged inline with `TODO(verify)` comments:
+
+| Area | Value in code | Why it's suspect |
+|------|---------------|------------------|
+| Token endpoint | `POST /oauth/token` | Standard candidate, but `/oauth2/token` or `/auth/v1/token` also common |
+| Pix refund | `POST /pix/payments/{e2eid}/refund` | BCB spec names refunds `/pix/{e2eid}/devolucao/{id}` |
+| DICT lookup | `GET /pix/dict/{key}` | BCB DICT is RSFN-gated; Dock's wrapper path unverified |
+
+The 10 tool **names** and **input schemas** above are the public contract and will remain stable. Only the internal HTTP calls in `src/index.ts` will change when we verify against the sandbox. Using this server against a live Dock tenant today may produce 404s on most calls.
+
+PR welcome from anyone with a Dock sandbox.
+
+## Roadmap
+
+### v0.2 (planned)
+- Verified paths against Dock sandbox
+- Card controls: `block_card`, `unblock_card`, `set_card_limits`
+- Account statements and transaction listings
+- Webhook event helpers
+
+### v0.3 (planned)
+- Boleto issuance
+- TED / bank transfers (non-Pix rails)
+- Credit underwriting endpoints (Dock's credit stack)
+
+Want to contribute? [Open a PR](https://github.com/codespar/mcp-dev-brasil) or [request a tool](https://github.com/codespar/mcp-dev-brasil/issues).
+
+## Links
+
+- [Dock](https://www.dock.tech)
+- [Dock Developers](https://developers.dock.tech) (gated — requires merchant login)
+- [MCP Dev Brasil](https://github.com/codespar/mcp-dev-brasil)
+- [Landing Page](https://codespar.dev/mcp)
+
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent-initiated bank transfers and card issuance? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
+## License
+
+MIT
