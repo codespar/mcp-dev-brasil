@@ -1,0 +1,34 @@
+{
+  "name": "@codespar/mcp-rapyd",
+  "version": "0.1.0",
+  "description": "MCP server for Rapyd — global collect + disburse across 100+ countries, including cash pickup and managed wallets",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-rapyd": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "rapyd",
+    "payments",
+    "payouts",
+    "global",
+    "cash-pickup",
+    "wallet",
+    "checkout",
+    "cross-border"
+  ],
+  "mcpName": "io.github.codespar/mcp-rapyd"
+}
