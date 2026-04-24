@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-clearsale",
+  "description": "MCP server for ClearSale — Brazilian fraud prevention, order risk scoring, device fingerprinting, and chargeback feedback",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/fraud/clearsale"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-clearsale",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "CLEARSALE_API_KEY",
+          "description": "ClearSale API key / bearer token used in the Authorization header",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "CLEARSALE_BASE_URL",
+          "description": "ClearSale API base URL. Defaults to https://api.clearsale.com.br (prod). Override per contract-issued staging URL.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
