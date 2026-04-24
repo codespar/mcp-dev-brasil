@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-coinbase-commerce",
+  "description": "MCP server for Coinbase Commerce — global crypto merchant payments. Create charges, checkouts, and invoices so buyers can pay in BTC, ETH, USDC and more; Coinbase settles to crypto or fiat.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/crypto/coinbase-commerce"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-coinbase-commerce",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "COINBASE_COMMERCE_API_KEY",
+          "description": "Coinbase Commerce API key. Create one at https://beta.commerce.coinbase.com/settings/security.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "COINBASE_COMMERCE_API_VERSION",
+          "description": "Coinbase Commerce API version pin (X-CC-Version header). Defaults to 2018-03-22.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
