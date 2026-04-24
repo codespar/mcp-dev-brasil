@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-sift",
+  "description": "MCP server for Sift — global enterprise ML-based fraud detection, real-time risk scoring (payment/account/content abuse), decisions workflows, and event ingestion",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/fraud/sift"
+  },
+  "version": "0.1.0-alpha.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-sift",
+      "version": "0.1.0-alpha.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SIFT_API_KEY",
+          "description": "Sift API key. Used in the Events API request body ($api_key) and as the HTTP Basic auth username (empty password) for Score + Decisions APIs.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "SIFT_ACCOUNT_ID",
+          "description": "Sift Account ID. Required for all Decisions API v3 endpoints (path segment /v3/accounts/{account_id}/...).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "SIFT_BASE_URL",
+          "description": "Sift API base URL. Defaults to https://api.sift.com.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
