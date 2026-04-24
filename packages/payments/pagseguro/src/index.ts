@@ -7,9 +7,18 @@
  * - create_order: Create an order (Pix, boleto, or credit card)
  * - get_order: Get order details by ID
  * - list_orders: List orders with filters
+ * - pay_order: Pay an existing order
  * - create_charge: Create a standalone charge
+ * - get_charge: Get charge details by ID
+ * - list_charges: List charges with filters
+ * - capture_charge: Capture a pre-authorized charge
+ * - cancel_charge: Cancel a charge
  * - refund: Refund a charge (full or partial)
  * - get_pix_qrcode: Get Pix QR code payload for an order
+ * - create_boleto: Create a boleto charge
+ * - get_boleto: Get boleto details by ID
+ * - get_public_keys: Get public key for card encryption
+ * - create_payout: Create a payout/transfer to a bank account
  * - create_customer: Create a customer
  * - get_balance: Get account balance
  * - create_subscription: Create a recurring subscription plan
@@ -17,6 +26,8 @@
  * - get_notifications: Get payment notification details
  * - create_split: Create a split payment configuration
  * - get_dispute: Get dispute/chargeback details
+ * - create_webhook: Register an application webhook URL
+ * - list_webhooks: List application webhooks
  *
  * Environment:
  *   PAGSEGURO_TOKEN — Bearer token from https://pagseguro.uol.com.br/
@@ -338,6 +349,220 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["dispute_id"],
       },
     },
+    {
+      name: "pay_order",
+      description: "Pay an existing order (attach a charge/payment to an order in CREATED state)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "Order ID (ORDE_xxx)" },
+          charges: {
+            type: "array",
+            description: "Charges to attach to the order",
+            items: {
+              type: "object",
+              properties: {
+                reference_id: { type: "string", description: "Charge reference" },
+                amount: {
+                  type: "object",
+                  properties: {
+                    value: { type: "number", description: "Amount in cents" },
+                    currency: { type: "string", description: "Currency (BRL)" },
+                  },
+                  required: ["value"],
+                },
+                payment_method: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", enum: ["PIX", "BOLETO", "CREDIT_CARD", "DEBIT_CARD"], description: "Payment type" },
+                  },
+                  required: ["type"],
+                },
+              },
+              required: ["amount", "payment_method"],
+            },
+          },
+        },
+        required: ["order_id", "charges"],
+      },
+    },
+    {
+      name: "get_charge",
+      description: "Get charge details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          charge_id: { type: "string", description: "Charge ID (CHAR_xxx)" },
+        },
+        required: ["charge_id"],
+      },
+    },
+    {
+      name: "list_charges",
+      description: "List charges with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          reference_id: { type: "string", description: "Filter by reference ID" },
+          status: { type: "string", enum: ["AUTHORIZED", "PAID", "CANCELED", "DECLINED", "IN_ANALYSIS", "WAITING"], description: "Filter by status" },
+          limit: { type: "number", description: "Number of results (default 20)" },
+          offset: { type: "number", description: "Pagination offset" },
+        },
+      },
+    },
+    {
+      name: "capture_charge",
+      description: "Capture a pre-authorized credit card charge",
+      inputSchema: {
+        type: "object",
+        properties: {
+          charge_id: { type: "string", description: "Charge ID (CHAR_xxx) in AUTHORIZED state" },
+          amount: {
+            type: "object",
+            properties: {
+              value: { type: "number", description: "Capture amount in cents (omit for full capture)" },
+            },
+          },
+        },
+        required: ["charge_id"],
+      },
+    },
+    {
+      name: "cancel_charge",
+      description: "Cancel a charge that has not yet been settled",
+      inputSchema: {
+        type: "object",
+        properties: {
+          charge_id: { type: "string", description: "Charge ID (CHAR_xxx)" },
+          amount: {
+            type: "object",
+            properties: {
+              value: { type: "number", description: "Cancel amount in cents (omit for full cancel)" },
+            },
+          },
+        },
+        required: ["charge_id"],
+      },
+    },
+    {
+      name: "create_boleto",
+      description: "Create a boleto charge",
+      inputSchema: {
+        type: "object",
+        properties: {
+          reference_id: { type: "string", description: "Your reference ID" },
+          amount: {
+            type: "object",
+            properties: {
+              value: { type: "number", description: "Amount in cents (BRL)" },
+              currency: { type: "string", description: "Currency (BRL)" },
+            },
+            required: ["value"],
+          },
+          payment_method: {
+            type: "object",
+            properties: {
+              type: { type: "string", enum: ["BOLETO"], description: "Must be BOLETO" },
+              boleto: {
+                type: "object",
+                description: "Boleto-specific data (due_date, instruction_lines, holder)",
+              },
+            },
+            required: ["type"],
+          },
+        },
+        required: ["amount", "payment_method"],
+      },
+    },
+    {
+      name: "get_boleto",
+      description: "Get boleto charge details by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          charge_id: { type: "string", description: "Charge ID of the boleto (CHAR_xxx)" },
+        },
+        required: ["charge_id"],
+      },
+    },
+    {
+      name: "get_public_keys",
+      description: "Get PagSeguro public key for card data encryption (type: card)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: ["card"], description: "Public key type (card)" },
+        },
+        required: ["type"],
+      },
+    },
+    {
+      name: "create_payout",
+      description: "Create a payout/transfer to a bank account or Pix key",
+      inputSchema: {
+        type: "object",
+        properties: {
+          reference_id: { type: "string", description: "Your reference ID" },
+          amount: {
+            type: "object",
+            properties: {
+              value: { type: "number", description: "Amount in cents (BRL)" },
+              currency: { type: "string", description: "Currency (BRL)" },
+            },
+            required: ["value"],
+          },
+          recipient: {
+            type: "object",
+            description: "Payout recipient (bank_account or pix_key)",
+            properties: {
+              name: { type: "string", description: "Recipient full name" },
+              tax_id: { type: "string", description: "Recipient CPF or CNPJ (numbers only)" },
+              bank_account: {
+                type: "object",
+                description: "Recipient bank account",
+                properties: {
+                  bank: { type: "string", description: "Bank code (ISPB or compe)" },
+                  branch: { type: "string", description: "Branch number" },
+                  number: { type: "string", description: "Account number" },
+                  check_digit: { type: "string", description: "Account check digit" },
+                  type: { type: "string", enum: ["CHECKING", "SAVINGS"], description: "Account type" },
+                },
+              },
+              pix_key: { type: "string", description: "Pix key (optional alternative to bank_account)" },
+            },
+            required: ["name", "tax_id"],
+          },
+        },
+        required: ["amount", "recipient"],
+      },
+    },
+    {
+      name: "create_webhook",
+      description: "Register an application webhook URL to receive event notifications",
+      inputSchema: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "HTTPS URL that will receive webhook events" },
+          events: {
+            type: "array",
+            description: "Event types to subscribe to (e.g. CHARGE.PAID, ORDER.CREATED)",
+            items: { type: "string" },
+          },
+        },
+        required: ["url"],
+      },
+    },
+    {
+      name: "list_webhooks",
+      description: "List registered application webhooks",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "Number of results (default 20)" },
+          offset: { type: "number", description: "Pagination offset" },
+        },
+      },
+    },
   ],
 }));
 
@@ -386,6 +611,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", `/charges/${args?.charge_id}/splits`, { receivers: args?.receivers }), null, 2) }] };
       case "get_dispute":
         return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/disputes/${args?.dispute_id}`), null, 2) }] };
+      case "pay_order": {
+        const { order_id, ...payBody } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", `/orders/${order_id}/pay`, payBody), null, 2) }] };
+      }
+      case "get_charge":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/charges/${args?.charge_id}`), null, 2) }] };
+      case "list_charges": {
+        const params = new URLSearchParams();
+        if (args?.reference_id) params.set("reference_id", String(args.reference_id));
+        if (args?.status) params.set("status", String(args.status));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.offset) params.set("offset", String(args.offset));
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/charges?${params}`), null, 2) }] };
+      }
+      case "capture_charge": {
+        const { charge_id, ...captureBody } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", `/charges/${charge_id}/capture`, captureBody), null, 2) }] };
+      }
+      case "cancel_charge": {
+        const { charge_id, ...cancelBody } = args as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", `/charges/${charge_id}/cancel`, cancelBody), null, 2) }] };
+      }
+      case "create_boleto":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", "/charges", args), null, 2) }] };
+      case "get_boleto":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/charges/${args?.charge_id}`), null, 2) }] };
+      case "get_public_keys":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", "/public-keys", { type: args?.type }), null, 2) }] };
+      case "create_payout":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", "/payouts", args), null, 2) }] };
+      case "create_webhook":
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("POST", "/applications/webhooks", args), null, 2) }] };
+      case "list_webhooks": {
+        const params = new URLSearchParams();
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.offset) params.set("offset", String(args.offset));
+        return { content: [{ type: "text", text: JSON.stringify(await pagseguroRequest("GET", `/applications/webhooks?${params}`), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
