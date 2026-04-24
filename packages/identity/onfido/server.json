@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-onfido",
+  "description": "MCP server for Onfido — global identity verification and KYC (applicants, documents, live photos, checks, reports)",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/identity/onfido"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-onfido",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ONFIDO_API_TOKEN",
+          "description": "Onfido API token. Sent as 'Authorization: Token token=<value>'.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "ONFIDO_REGION",
+          "description": "Region for the API host: 'eu' (api.eu.onfido.com), 'us' (api.us.onfido.com), 'ca' (api.ca.onfido.com). Defaults to api.onfido.com when unset.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
