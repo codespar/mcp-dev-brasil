@@ -1,0 +1,37 @@
+{
+  "name": "@codespar/mcp-jumio",
+  "version": "0.1.0",
+  "description": "MCP server for Jumio — global enterprise identity verification and KYX (accounts, workflow executions, documents, credentials, similarity)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-jumio": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "jumio",
+    "identity",
+    "kyc",
+    "kyx",
+    "verification",
+    "aml",
+    "document-verification",
+    "facial-similarity",
+    "fraud-detection",
+    "enterprise",
+    "global"
+  ],
+  "mcpName": "io.github.codespar/mcp-jumio"
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-jumio",
+  "description": "MCP server for Jumio — global enterprise identity verification and KYX (accounts, workflow executions, documents, credentials, similarity)",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/identity/jumio"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-jumio",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "JUMIO_API_TOKEN",
+          "description": "Jumio API token (sent as the username component of HTTP Basic auth).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "JUMIO_API_SECRET",
+          "description": "Jumio API secret (sent as the password component of HTTP Basic auth).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "JUMIO_USER_AGENT",
+          "description": "Merchant User-Agent string. Jumio requires a custom User-Agent header identifying the calling application (e.g. 'AcmeCorp KYX/1.0').",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "JUMIO_REGION",
+          "description": "Region for the API host: 'us' (api.amer-1.jumio.ai), 'eu' (api.emea-1.jumio.ai), 'sg' (api.apac-1.jumio.ai). Defaults to 'us'.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
