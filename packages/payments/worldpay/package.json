@@ -1,0 +1,34 @@
+{
+  "name": "@codespar/mcp-worldpay",
+  "version": "0.1.0-alpha.1",
+  "description": "MCP server for Access Worldpay — global enterprise payment processor (authorize, capture, refund, reverse, verify, tokenize, fraud screen, disputes)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-worldpay": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "worldpay",
+    "access-worldpay",
+    "payments",
+    "global-payments",
+    "card-payments",
+    "fraudsight",
+    "disputes",
+    "enterprise"
+  ],
+  "mcpName": "io.github.codespar/mcp-worldpay"
+}
