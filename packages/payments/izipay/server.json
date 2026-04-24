@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-izipay",
+  "description": "MCP server for Izipay — Peru's enterprise acquirer (Niubiz). Card authorize/capture/refund, tokenization, cuotas, reconciliation.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/payments/izipay"
+  },
+  "version": "0.1.0-alpha.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-izipay",
+      "version": "0.1.0-alpha.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "IZIPAY_USERNAME",
+          "description": "Izipay merchant username issued with your acquirer contract",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "IZIPAY_PASSWORD",
+          "description": "Izipay merchant password used to obtain JWT",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "IZIPAY_MERCHANT_CODE",
+          "description": "Izipay merchant code (codigoComercio)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "IZIPAY_ENV",
+          "description": "Environment: sandbox or production. Defaults to production.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "IZIPAY_BASE_URL",
+          "description": "Izipay API base URL. Defaults per IZIPAY_ENV. Override if your contract issues a custom host.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
