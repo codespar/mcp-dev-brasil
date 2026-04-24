@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-legiti",
+  "description": "MCP server for Legiti — Brazilian fraud prevention (ticketing + ecommerce), real-time order evaluation, chargeback feedback, and account/event/sale collection",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/fraud/legiti"
+  },
+  "version": "0.1.0-alpha.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-legiti",
+      "version": "0.1.0-alpha.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "LEGITI_API_KEY",
+          "description": "Legiti API key (JWT-format bearer token). Use the sandbox key while testing — Legiti trains its ML models on every request, so test data hitting a production key pollutes the model.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "LEGITI_BASE_URL",
+          "description": "Legiti API base URL. Defaults to https://collection-prod.inspcdn.net. Legiti issues customer-specific base URLs — override per contract.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
