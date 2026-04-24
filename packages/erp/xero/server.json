@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-xero",
+  "description": "MCP server for Xero — global cloud accounting (UK/AU/NZ leader, expanding in US). Contacts, invoices, payments, items, accounts, reports.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/erp/xero"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-xero",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "XERO_ACCESS_TOKEN",
+          "description": "Xero OAuth2 access token (Bearer). Obtain via Xero OAuth2 flow; rotate on expiry.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "XERO_TENANT_ID",
+          "description": "Xero tenant/organization id sent in the Xero-tenant-id header on every request.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

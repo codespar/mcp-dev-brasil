@@ -1,0 +1,36 @@
+{
+  "name": "@codespar/mcp-xero",
+  "version": "0.1.0",
+  "description": "MCP server for Xero — global cloud accounting (UK/AU/NZ leader, expanding in US). Contacts, invoices, payments, items, accounts, reports.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-xero": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "xero",
+    "accounting",
+    "erp",
+    "invoicing",
+    "bookkeeping",
+    "smb",
+    "uk",
+    "australia",
+    "new-zealand",
+    "global"
+  ],
+  "mcpName": "io.github.codespar/mcp-xero"
+}
