@@ -15,18 +15,27 @@
  *   - Suppressions per unsubscribe group (list / add)
  *   - Global stats (sent / delivered / opens / clicks)
  *
- * Tools (11):
- *   send_mail          — POST /mail/send (personalizations, content, attachments)
- *   send_template      — POST /mail/send using a dynamic template_id
- *   add_contact        — PUT  /marketing/contacts (upsert, async job)
- *   list_contacts      — GET  /marketing/contacts
- *   delete_contact     — DELETE /marketing/contacts?ids=...
- *   search_contacts    — POST /marketing/contacts/search (SGQL)
- *   list_templates     — GET  /templates?generations=dynamic
- *   create_template    — POST /templates
- *   list_suppressions  — GET  /asm/groups/{group_id}/suppressions
- *   add_suppression    — POST /asm/groups/{group_id}/suppressions
- *   get_stats          — GET  /stats?start_date=X&end_date=Y
+ * Tools (20):
+ *   send_mail                    — POST /mail/send (personalizations, content, attachments)
+ *   send_template                — POST /mail/send using a dynamic template_id
+ *   add_contact                  — PUT  /marketing/contacts (upsert, async job)
+ *   list_contacts                — GET  /marketing/contacts
+ *   get_contact                  — GET  /marketing/contacts/{id}
+ *   delete_contact               — DELETE /marketing/contacts?ids=...
+ *   search_contacts              — POST /marketing/contacts/search (SGQL)
+ *   list_lists                   — GET  /marketing/lists
+ *   create_list                  — POST /marketing/lists
+ *   delete_list                  — DELETE /marketing/lists/{id}
+ *   list_templates               — GET  /templates?generations=dynamic
+ *   create_template              — POST /templates
+ *   list_unsubscribe_groups      — GET  /asm/groups
+ *   list_suppressions            — GET  /asm/groups/{group_id}/suppressions
+ *   add_suppression              — POST /asm/groups/{group_id}/suppressions
+ *   get_bounces                  — GET  /suppression/bounces
+ *   delete_bounce                — DELETE /suppression/bounces/{email}
+ *   cancel_scheduled_send        — POST /user/scheduled_sends (cancel/pause by batch_id)
+ *   get_event_webhook_settings   — GET  /user/webhooks/event/settings
+ *   get_stats                    — GET  /stats?start_date=X&end_date=Y
  *
  * Authentication
  *   Authorization: Bearer <SENDGRID_API_KEY>
@@ -96,7 +105,7 @@ function buildQuery(params: Record<string, unknown>): string {
 }
 
 const server = new Server(
-  { name: "mcp-sendgrid", version: "0.1.0" },
+  { name: "mcp-sendgrid", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -202,6 +211,51 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_contact",
+      description: "Retrieve a single Marketing Campaigns contact by id via GET /marketing/contacts/{id}. Returns full contact record including custom fields and list_ids.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Contact UUID" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "list_lists",
+      description: "List all Marketing Campaigns contact lists via GET /marketing/lists. Returns list UUIDs, names, and contact_count. Supports pagination.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          page_size: { type: "number", description: "Results per page (default 100, max 1000)" },
+          page_token: { type: "string", description: "Pagination token from previous response" },
+        },
+      },
+    },
+    {
+      name: "create_list",
+      description: "Create a Marketing Campaigns contact list via POST /marketing/lists. Returns the new list UUID. Use the id with add_contact's list_ids to populate it.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "List name (max 100 chars, must be unique)" },
+        },
+        required: ["name"],
+      },
+    },
+    {
+      name: "delete_list",
+      description: "Delete a Marketing Campaigns contact list via DELETE /marketing/lists/{id}. Contacts are NOT deleted by default — set delete_contacts=true to also remove contacts that belong ONLY to this list.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "List UUID" },
+          delete_contacts: { type: "boolean", description: "If true, also delete contacts that are exclusive to this list (async job)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
       name: "list_templates",
       description: "List transactional templates via GET /templates. By default returns dynamic templates (recommended); set generations='legacy' for legacy.",
       inputSchema: {
@@ -246,6 +300,60 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           recipient_emails: { type: "array", items: { type: "string" }, description: "Emails to suppress" },
         },
         required: ["group_id", "recipient_emails"],
+      },
+    },
+    {
+      name: "list_unsubscribe_groups",
+      description: "List all unsubscribe groups on the account via GET /asm/groups. Returns [{id, name, description, is_default, unsubscribes}]. Use the id with list_suppressions / add_suppression.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "number", description: "Optional: filter by a single group id" },
+        },
+      },
+    },
+    {
+      name: "get_bounces",
+      description: "Retrieve bounced recipients via GET /suppression/bounces. Returns [{email, created, reason, status}]. Filter by time window with start_time/end_time (Unix seconds).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          start_time: { type: "number", description: "Unix timestamp (seconds) lower bound" },
+          end_time: { type: "number", description: "Unix timestamp (seconds) upper bound" },
+          limit: { type: "number", description: "Max results to return" },
+          offset: { type: "number", description: "Offset for pagination" },
+        },
+      },
+    },
+    {
+      name: "delete_bounce",
+      description: "Remove a bounced address from the bounce suppression list via DELETE /suppression/bounces/{email}. Call this after the recipient confirms the underlying issue (e.g. mailbox full) is resolved.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          email: { type: "string", description: "Bounced email address to clear" },
+        },
+        required: ["email"],
+      },
+    },
+    {
+      name: "cancel_scheduled_send",
+      description: "Cancel or pause a scheduled send by batch_id via POST /user/scheduled_sends. A send_mail call with `send_at` + `batch_id` can be aborted until the send runs. Set status to 'cancel' or 'pause'.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          batch_id: { type: "string", description: "The batch_id that was attached to the scheduled /mail/send call" },
+          status: { type: "string", enum: ["cancel", "pause"], description: "`cancel` aborts; `pause` holds the batch (can be resumed by deleting the status)" },
+        },
+        required: ["batch_id", "status"],
+      },
+    },
+    {
+      name: "get_event_webhook_settings",
+      description: "Retrieve the Event Webhook configuration via GET /user/webhooks/event/settings. Returns {url, enabled, delivered, open, click, bounce, dropped, spam_report, unsubscribe, ...} — useful to verify which SendGrid events are being forwarded.",
+      inputSchema: {
+        type: "object",
+        properties: {},
       },
     },
     {
@@ -319,6 +427,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "search_contacts":
         return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("POST", "/marketing/contacts/search", { query: a.query }), null, 2) }] };
+      case "get_contact":
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("GET", `/marketing/contacts/${a.id}`), null, 2) }] };
+      case "list_lists": {
+        const q = buildQuery({
+          page_size: a.page_size,
+          page_token: a.page_token,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("GET", `/marketing/lists${q}`), null, 2) }] };
+      }
+      case "create_list":
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("POST", "/marketing/lists", { name: a.name }), null, 2) }] };
+      case "delete_list": {
+        const q = buildQuery({
+          delete_contacts: a.delete_contacts ? "true" : undefined,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("DELETE", `/marketing/lists/${a.id}${q}`), null, 2) }] };
+      }
       case "list_templates": {
         const q = buildQuery({
           generations: a.generations ?? "dynamic",
@@ -337,6 +462,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("GET", `/asm/groups/${a.group_id}/suppressions`), null, 2) }] };
       case "add_suppression":
         return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("POST", `/asm/groups/${a.group_id}/suppressions`, { recipient_emails: a.recipient_emails }), null, 2) }] };
+      case "list_unsubscribe_groups": {
+        const q = buildQuery({ id: a.id });
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("GET", `/asm/groups${q}`), null, 2) }] };
+      }
+      case "get_bounces": {
+        const q = buildQuery({
+          start_time: a.start_time,
+          end_time: a.end_time,
+          limit: a.limit,
+          offset: a.offset,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("GET", `/suppression/bounces${q}`), null, 2) }] };
+      }
+      case "delete_bounce":
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("DELETE", `/suppression/bounces/${encodeURIComponent(String(a.email))}`), null, 2) }] };
+      case "cancel_scheduled_send":
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("POST", "/user/scheduled_sends", { batch_id: a.batch_id, status: a.status }), null, 2) }] };
+      case "get_event_webhook_settings":
+        return { content: [{ type: "text", text: JSON.stringify(await sendgridRequest("GET", "/user/webhooks/event/settings"), null, 2) }] };
       case "get_stats": {
         const q = buildQuery({
           start_date: a.start_date,
@@ -368,7 +512,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-sendgrid", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-sendgrid", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);

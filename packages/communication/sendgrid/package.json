@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp-sendgrid",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for SendGrid — global transactional + marketing email (Twilio-owned). Pairs with @codespar/mcp-twilio for full messaging coverage.",
   "type": "module",
   "main": "./dist/index.js",
