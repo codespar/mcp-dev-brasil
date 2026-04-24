@@ -1,0 +1,37 @@
+{
+  "name": "@codespar/mcp-dlocal",
+  "version": "0.1.0",
+  "description": "MCP server for dLocal — LatAm cross-border payments, payouts, refunds across 15+ countries via one API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-dlocal": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "dlocal",
+    "payments",
+    "payouts",
+    "latam",
+    "cross-border",
+    "brazil",
+    "mexico",
+    "argentina",
+    "colombia",
+    "chile",
+    "peru"
+  ],
+  "mcpName": "io.github.codespar/mcp-dlocal"
+}
