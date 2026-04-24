@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-braintree",
+  "description": "MCP server for Braintree (PayPal) — global card processing via GraphQL. Authorize/charge/capture/refund/void, vault, customers, client tokens.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/payments/braintree"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-braintree",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BRAINTREE_MERCHANT_ID",
+          "description": "Braintree merchant id (from the Control Panel > API).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BRAINTREE_PUBLIC_KEY",
+          "description": "Braintree public API key — Basic auth username.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BRAINTREE_PRIVATE_KEY",
+          "description": "Braintree private API key — Basic auth password (secret).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BRAINTREE_ENV",
+          "description": "Braintree environment. 'sandbox' (default, https://payments.sandbox.braintree-api.com/graphql) or 'production' (https://payments.braintree-api.com/graphql).",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BRAINTREE_API_VERSION",
+          "description": "Braintree-Version header value (YYYY-MM-DD). Defaults to 2019-01-01.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
