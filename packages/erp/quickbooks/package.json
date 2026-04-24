@@ -1,0 +1,33 @@
+{
+  "name": "@codespar/mcp-quickbooks",
+  "version": "0.1.0",
+  "description": "MCP server for QuickBooks Online (Intuit) — global ERP/accounting platform. Customers, invoices, payments, items, accounts, and P&L reports.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-quickbooks": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "quickbooks",
+    "qbo",
+    "intuit",
+    "erp",
+    "accounting",
+    "invoicing",
+    "oauth2"
+  ],
+  "mcpName": "io.github.codespar/mcp-quickbooks"
+}
