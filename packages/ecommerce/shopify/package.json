@@ -1,0 +1,35 @@
+{
+  "name": "@codespar/mcp-shopify",
+  "version": "0.1.0",
+  "description": "MCP server for Shopify — global ecommerce platform Admin REST API (orders, products, customers, inventory, fulfillments, webhooks)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-shopify": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "shopify",
+    "ecommerce",
+    "orders",
+    "products",
+    "inventory",
+    "fulfillments",
+    "dtc",
+    "latam",
+    "brazil"
+  ],
+  "mcpName": "io.github.codespar/mcp-shopify"
+}
