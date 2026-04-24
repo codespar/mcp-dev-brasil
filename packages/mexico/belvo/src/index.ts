@@ -8,13 +8,26 @@
  * - list_institutions: List available financial institutions
  * - create_link: Create a link to a financial institution
  * - list_links: List existing links
+ * - get_link: Retrieve a specific link by ID
+ * - delete_link: Delete a link by ID
+ * - patch_link: Update link credentials (e.g. recover from INVALID)
  * - get_accounts: Get accounts for a link
+ * - list_accounts: List stored accounts (GET /api/accounts/)
+ * - get_account_detail: Retrieve a stored account by ID
+ * - list_transactions: List stored transactions (GET /api/transactions/)
+ * - get_transaction_detail: Retrieve a stored transaction by ID
  * - get_balances: Get balances for a link
- * - get_transactions: Get transactions for a link
+ * - list_balances: List stored balances (GET /api/balances/)
  * - get_owners: Get owner information for a link
+ * - list_owners: List stored owners
  * - get_incomes: Get income data for a link
+ * - list_incomes: List stored incomes
+ * - get_employment_records: Get employment records for a link
+ * - get_invoices: Get invoices (BR/MX fiscal institutions)
+ * - get_receivables_transactions: Get receivables (payment rails)
  * - get_tax_returns: Get tax returns for a link
  * - get_investments: Get investment portfolios for a link
+ * - create_widget_token: Create an access token for Belvo Connect Widget
  *
  * Environment:
  *   BELVO_SECRET_ID — Secret ID for authentication
@@ -55,7 +68,7 @@ async function belvoRequest(method: string, path: string, body?: unknown): Promi
 }
 
 const server = new Server(
-  { name: "mcp-belvo", version: "0.1.0" },
+  { name: "mcp-belvo", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -203,6 +216,186 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["link"],
       },
     },
+    {
+      name: "get_link",
+      description: "Retrieve details of a specific link by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Link ID (UUID)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "delete_link",
+      description: "Delete a link (and all its associated data) by ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Link ID (UUID)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "patch_link",
+      description: "Update a link's credentials or resume after MFA (PATCH /api/links/)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Link ID (UUID)" },
+          password: { type: "string", description: "Updated user password" },
+          password2: { type: "string", description: "Updated secondary password" },
+          token: { type: "string", description: "MFA token to resume session" },
+          username: { type: "string", description: "Updated username" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "list_accounts",
+      description: "List stored accounts (GET /api/accounts/) with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Filter by link ID" },
+          page: { type: "number", description: "Page number" },
+          page_size: { type: "number", description: "Results per page" },
+        },
+      },
+    },
+    {
+      name: "get_account_detail",
+      description: "Retrieve a stored account by account ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Account ID (UUID)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "list_transactions",
+      description: "List stored transactions (GET /api/transactions/) with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Filter by link ID" },
+          account: { type: "string", description: "Filter by account ID" },
+          page: { type: "number", description: "Page number" },
+          page_size: { type: "number", description: "Results per page" },
+        },
+      },
+    },
+    {
+      name: "get_transaction_detail",
+      description: "Retrieve a stored transaction by transaction ID",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Transaction ID (UUID)" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "list_balances",
+      description: "List stored balances (GET /api/balances/) with optional filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Filter by link ID" },
+          account: { type: "string", description: "Filter by account ID" },
+          page: { type: "number", description: "Page number" },
+          page_size: { type: "number", description: "Results per page" },
+        },
+      },
+    },
+    {
+      name: "list_owners",
+      description: "List stored owners (GET /api/owners/)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Filter by link ID" },
+          page: { type: "number", description: "Page number" },
+          page_size: { type: "number", description: "Results per page" },
+        },
+      },
+    },
+    {
+      name: "list_incomes",
+      description: "List stored incomes (GET /api/incomes/)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Filter by link ID" },
+          page: { type: "number", description: "Page number" },
+          page_size: { type: "number", description: "Results per page" },
+        },
+      },
+    },
+    {
+      name: "get_employment_records",
+      description: "Get employment records for a link (employment institutions)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Link ID" },
+          token: { type: "string", description: "MFA token (if required)" },
+          save_data: { type: "boolean", description: "Save data for future queries" },
+        },
+        required: ["link"],
+      },
+    },
+    {
+      name: "get_invoices",
+      description: "Get invoices for a link (BR/MX fiscal institutions)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Link ID" },
+          date_from: { type: "string", description: "Start date (YYYY-MM-DD)" },
+          date_to: { type: "string", description: "End date (YYYY-MM-DD)" },
+          type: { type: "string", enum: ["INFLOW", "OUTFLOW"], description: "Invoice direction" },
+          attach_xml: { type: "boolean", description: "Include XML payload" },
+          token: { type: "string", description: "MFA token (if required)" },
+          save_data: { type: "boolean", description: "Save data for future queries" },
+        },
+        required: ["link", "date_from", "date_to", "type"],
+      },
+    },
+    {
+      name: "get_receivables_transactions",
+      description: "Get receivables transactions for a link (payment rails / acquirer data)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          link: { type: "string", description: "Link ID" },
+          date_from: { type: "string", description: "Start date (YYYY-MM-DD)" },
+          date_to: { type: "string", description: "End date (YYYY-MM-DD)" },
+          token: { type: "string", description: "MFA token (if required)" },
+          save_data: { type: "boolean", description: "Save data for future queries" },
+        },
+        required: ["link", "date_from", "date_to"],
+      },
+    },
+    {
+      name: "create_widget_token",
+      description: "Create a short-lived access token for the Belvo Connect Widget",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Secret key ID (defaults to env BELVO_SECRET_ID)" },
+          password: { type: "string", description: "Secret key password (defaults to env BELVO_SECRET_PASSWORD)" },
+          scopes: { type: "string", description: "Comma-separated scopes (default: read_institutions,write_links)" },
+          link_id: { type: "string", description: "Existing link ID (for update flow)" },
+          widget: { type: "object", description: "Widget configuration object (callback_urls, branding, etc.)" },
+        },
+      },
+    },
   ],
 }));
 
@@ -295,6 +488,111 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         if (args?.save_data !== undefined) payload.save_data = args.save_data;
         return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("POST", "/api/investments/portfolios/", payload), null, 2) }] };
       }
+      case "get_link": {
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/links/${args?.id}/`), null, 2) }] };
+      }
+      case "delete_link": {
+        const res = await fetch(`${BASE_URL}/api/links/${args?.id}/`, {
+          method: "DELETE",
+          headers: SECRET_ID && SECRET_PASSWORD
+            ? { "Authorization": `Basic ${Buffer.from(SECRET_ID + ":" + SECRET_PASSWORD).toString("base64")}` }
+            : {},
+        });
+        if (!res.ok && res.status !== 204) {
+          const err = await res.text();
+          throw new Error(`Belvo API ${res.status}: ${err}`);
+        }
+        return { content: [{ type: "text", text: JSON.stringify({ deleted: true, id: args?.id }, null, 2) }] };
+      }
+      case "patch_link": {
+        const payload: any = {};
+        if (args?.password) payload.password = args.password;
+        if (args?.password2) payload.password2 = args.password2;
+        if (args?.token) payload.token = args.token;
+        if (args?.username) payload.username = args.username;
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("PATCH", `/api/links/${args?.id}/`, payload), null, 2) }] };
+      }
+      case "list_accounts": {
+        const params = new URLSearchParams();
+        if (args?.link) params.set("link", String(args.link));
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.page_size) params.set("page_size", String(args.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/accounts/?${params}`), null, 2) }] };
+      }
+      case "get_account_detail": {
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/accounts/${args?.id}/`), null, 2) }] };
+      }
+      case "list_transactions": {
+        const params = new URLSearchParams();
+        if (args?.link) params.set("link", String(args.link));
+        if (args?.account) params.set("account", String(args.account));
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.page_size) params.set("page_size", String(args.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/transactions/?${params}`), null, 2) }] };
+      }
+      case "get_transaction_detail": {
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/transactions/${args?.id}/`), null, 2) }] };
+      }
+      case "list_balances": {
+        const params = new URLSearchParams();
+        if (args?.link) params.set("link", String(args.link));
+        if (args?.account) params.set("account", String(args.account));
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.page_size) params.set("page_size", String(args.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/balances/?${params}`), null, 2) }] };
+      }
+      case "list_owners": {
+        const params = new URLSearchParams();
+        if (args?.link) params.set("link", String(args.link));
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.page_size) params.set("page_size", String(args.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/owners/?${params}`), null, 2) }] };
+      }
+      case "list_incomes": {
+        const params = new URLSearchParams();
+        if (args?.link) params.set("link", String(args.link));
+        if (args?.page) params.set("page", String(args.page));
+        if (args?.page_size) params.set("page_size", String(args.page_size));
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("GET", `/api/incomes/?${params}`), null, 2) }] };
+      }
+      case "get_employment_records": {
+        const payload: any = { link: args?.link };
+        if (args?.token) payload.token = args.token;
+        if (args?.save_data !== undefined) payload.save_data = args.save_data;
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("POST", "/api/employment-records/", payload), null, 2) }] };
+      }
+      case "get_invoices": {
+        const payload: any = {
+          link: args?.link,
+          date_from: args?.date_from,
+          date_to: args?.date_to,
+          type: args?.type,
+        };
+        if (args?.attach_xml !== undefined) payload.attach_xml = args.attach_xml;
+        if (args?.token) payload.token = args.token;
+        if (args?.save_data !== undefined) payload.save_data = args.save_data;
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("POST", "/api/invoices/", payload), null, 2) }] };
+      }
+      case "get_receivables_transactions": {
+        const payload: any = {
+          link: args?.link,
+          date_from: args?.date_from,
+          date_to: args?.date_to,
+        };
+        if (args?.token) payload.token = args.token;
+        if (args?.save_data !== undefined) payload.save_data = args.save_data;
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("POST", "/api/receivables/transactions/", payload), null, 2) }] };
+      }
+      case "create_widget_token": {
+        const payload: any = {
+          id: args?.id || SECRET_ID,
+          password: args?.password || SECRET_PASSWORD,
+          scopes: args?.scopes || "read_institutions,write_links,read_consents,write_consents,write_consent_callback",
+        };
+        if (args?.link_id) payload.link_id = args.link_id;
+        if (args?.widget) payload.widget = args.widget;
+        return { content: [{ type: "text", text: JSON.stringify(await belvoRequest("POST", "/api/token/", payload), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -317,7 +615,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-belvo", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-belvo", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
