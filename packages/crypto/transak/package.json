@@ -1,0 +1,34 @@
+{
+  "name": "@codespar/mcp-transak",
+  "version": "0.1.0-alpha.1",
+  "description": "MCP server for Transak — fiat-to-crypto on/off-ramp across ~170 countries with multi-chain support (Partner API)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-transak": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "transak",
+    "crypto",
+    "fiat-onramp",
+    "fiat-offramp",
+    "on-ramp",
+    "off-ramp",
+    "web3",
+    "payments"
+  ],
+  "mcpName": "io.github.codespar/mcp-transak"
+}

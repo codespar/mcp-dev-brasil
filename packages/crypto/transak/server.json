@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-transak",
+  "description": "MCP server for Transak — fiat-to-crypto on/off-ramp across ~170 countries with multi-chain support (Partner API)",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-brasil",
+    "source": "github",
+    "subfolder": "packages/crypto/transak"
+  },
+  "version": "0.1.0-alpha.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-transak",
+      "version": "0.1.0-alpha.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "TRANSAK_API_KEY",
+          "description": "Transak partner API key (from partner dashboard). Used as partnerApiKey query param on public quote endpoint and bundled with api-secret to mint the access-token for Partner API calls.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "TRANSAK_API_SECRET",
+          "description": "Transak partner API secret. Sent as the api-secret header to endpoints that require server-to-server authentication (and used to mint access tokens for order endpoints).",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "TRANSAK_ENV",
+          "description": "Environment selector: 'staging' (default) targets https://api-stg.transak.com; 'production' targets https://api.transak.com.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
