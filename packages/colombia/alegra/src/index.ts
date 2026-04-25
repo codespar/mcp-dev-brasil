@@ -7,12 +7,22 @@
  * - create_invoice: Create an invoice
  * - get_invoice: Get invoice by ID
  * - list_invoices: List invoices
+ * - void_invoice: Void/cancel an invoice
+ * - get_invoice_pdf: Get invoice PDF URL
+ * - send_invoice: Email an invoice to a contact
  * - create_contact: Create a contact (customer/supplier)
+ * - update_contact: Update an existing contact
+ * - delete_contact: Delete a contact
  * - list_contacts: List contacts
  * - create_item: Create a product/service item
+ * - update_item: Update an existing item
  * - list_items: List items
  * - list_payments: List payments
+ * - get_payment: Get payment by ID
  * - create_payment: Record a payment
+ * - void_payment: Void a payment
+ * - list_categories: List item categories (chart of accounts)
+ * - list_bank_accounts: List bank accounts
  * - get_company: Get company profile information
  *
  * Environment:
@@ -53,7 +63,7 @@ async function alegraRequest(method: string, path: string, body?: unknown): Prom
 }
 
 const server = new Server(
-  { name: "mcp-alegra", version: "0.1.0" },
+  { name: "mcp-alegra", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -127,6 +137,53 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "void_invoice",
+      description: "Void/cancel an invoice",
+      inputSchema: {
+        type: "object",
+        properties: {
+          invoiceId: { type: "number", description: "Invoice ID" },
+          reason: { type: "string", description: "Reason for void/annulment" },
+        },
+        required: ["invoiceId"],
+      },
+    },
+    {
+      name: "get_invoice_pdf",
+      description: "Get invoice PDF download URL",
+      inputSchema: {
+        type: "object",
+        properties: {
+          invoiceId: { type: "number", description: "Invoice ID" },
+        },
+        required: ["invoiceId"],
+      },
+    },
+    {
+      name: "send_invoice",
+      description: "Email an invoice to one or more recipients",
+      inputSchema: {
+        type: "object",
+        properties: {
+          invoiceId: { type: "number", description: "Invoice ID" },
+          emails: {
+            type: "array",
+            description: "Recipient email addresses",
+            items: { type: "string" },
+          },
+          cc: {
+            type: "array",
+            description: "CC recipients",
+            items: { type: "string" },
+          },
+          subject: { type: "string", description: "Email subject" },
+          body: { type: "string", description: "Email body/message" },
+          send_copy_to_user: { type: "boolean", description: "Send a copy to the account user" },
+        },
+        required: ["invoiceId", "emails"],
+      },
+    },
+    {
       name: "create_contact",
       description: "Create a contact (customer or supplier)",
       inputSchema: {
@@ -143,6 +200,37 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           regime: { type: "string", description: "Tax regime (simplified, common)" },
         },
         required: ["name"],
+      },
+    },
+    {
+      name: "update_contact",
+      description: "Update an existing contact",
+      inputSchema: {
+        type: "object",
+        properties: {
+          contactId: { type: "number", description: "Contact ID" },
+          name: { type: "string", description: "Contact name" },
+          identification: { type: "string", description: "Tax ID" },
+          email: { type: "string", description: "Email address" },
+          phone_primary: { type: "string", description: "Primary phone" },
+          address: { type: "string", description: "Address" },
+          city: { type: "string", description: "City" },
+          department: { type: "string", description: "Department/state" },
+          type: { type: "string", description: "Contact type (client, provider)" },
+          regime: { type: "string", description: "Tax regime" },
+        },
+        required: ["contactId"],
+      },
+    },
+    {
+      name: "delete_contact",
+      description: "Delete a contact",
+      inputSchema: {
+        type: "object",
+        properties: {
+          contactId: { type: "number", description: "Contact ID" },
+        },
+        required: ["contactId"],
       },
     },
     {
@@ -189,6 +277,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "update_item",
+      description: "Update an existing item",
+      inputSchema: {
+        type: "object",
+        properties: {
+          itemId: { type: "number", description: "Item ID" },
+          name: { type: "string", description: "Item name" },
+          description: { type: "string", description: "Description" },
+          reference: { type: "string", description: "Reference/SKU code" },
+          price: { type: "number", description: "Price" },
+          category: { type: "number", description: "Category ID" },
+          tax: {
+            type: "array",
+            description: "Tax IDs",
+            items: { type: "number" },
+          },
+          type: { type: "string", description: "Item type (product, service, kit)" },
+        },
+        required: ["itemId"],
+      },
+    },
+    {
       name: "list_items",
       description: "List products and services",
       inputSchema: {
@@ -212,6 +322,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           date_from: { type: "string", description: "Start date (YYYY-MM-DD)" },
           date_to: { type: "string", description: "End date (YYYY-MM-DD)" },
         },
+      },
+    },
+    {
+      name: "get_payment",
+      description: "Get payment by ID",
+      inputSchema: {
+        type: "object",
+        properties: { paymentId: { type: "number", description: "Payment ID" } },
+        required: ["paymentId"],
       },
     },
     {
@@ -240,6 +359,41 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           observations: { type: "string", description: "Notes" },
         },
         required: ["date", "amount"],
+      },
+    },
+    {
+      name: "void_payment",
+      description: "Void/annul a payment",
+      inputSchema: {
+        type: "object",
+        properties: {
+          paymentId: { type: "number", description: "Payment ID" },
+        },
+        required: ["paymentId"],
+      },
+    },
+    {
+      name: "list_categories",
+      description: "List item categories (chart of accounts)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          start: { type: "number", description: "Offset for pagination" },
+          limit: { type: "number", description: "Results limit" },
+          query: { type: "string", description: "Search query" },
+        },
+      },
+    },
+    {
+      name: "list_bank_accounts",
+      description: "List bank accounts",
+      inputSchema: {
+        type: "object",
+        properties: {
+          start: { type: "number", description: "Offset for pagination" },
+          limit: { type: "number", description: "Results limit" },
+          type: { type: "string", description: "Filter by account type" },
+        },
       },
     },
     {
@@ -280,6 +434,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         if (args?.client_id) params.set("client", String(args.client_id));
         return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", `/invoices?${params}`), null, 2) }] };
       }
+      case "void_invoice": {
+        const payload: any = { status: "void" };
+        if (args?.reason) payload.reason = args.reason;
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("PUT", `/invoices/${args?.invoiceId}/void`, payload), null, 2) }] };
+      }
+      case "get_invoice_pdf":
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", `/invoices/${args?.invoiceId}/pdf`), null, 2) }] };
+      case "send_invoice": {
+        const payload: any = { emails: args?.emails };
+        if (args?.cc) payload.copyTo = args.cc;
+        if (args?.subject) payload.subject = args.subject;
+        if (args?.body) payload.body = args.body;
+        if (args?.send_copy_to_user !== undefined) payload.sendCopyToUser = args.send_copy_to_user;
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("POST", `/invoices/${args?.invoiceId}/email`, payload), null, 2) }] };
+      }
       case "create_contact": {
         const payload: any = { name: args?.name };
         if (args?.identification) payload.identification = args.identification;
@@ -292,6 +461,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         if (args?.regime) payload.regime = args.regime;
         return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("POST", "/contacts", payload), null, 2) }] };
       }
+      case "update_contact": {
+        const payload: any = {};
+        if (args?.name) payload.name = args.name;
+        if (args?.identification) payload.identification = args.identification;
+        if (args?.email) payload.email = args.email;
+        if (args?.phone_primary) payload.phonePrimary = args.phone_primary;
+        if (args?.address) payload.address = { address: args.address };
+        if (args?.city) payload.address = { ...payload.address, city: args.city };
+        if (args?.department) payload.address = { ...payload.address, department: args.department };
+        if (args?.type) payload.type = args.type;
+        if (args?.regime) payload.regime = args.regime;
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("PUT", `/contacts/${args?.contactId}`, payload), null, 2) }] };
+      }
+      case "delete_contact":
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("DELETE", `/contacts/${args?.contactId}`), null, 2) }] };
       case "list_contacts": {
         const params = new URLSearchParams();
         if (args?.start) params.set("start", String(args.start));
@@ -313,6 +497,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         if (args?.type) payload.type = args.type;
         return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("POST", "/items", payload), null, 2) }] };
       }
+      case "update_item": {
+        const payload: any = {};
+        if (args?.name) payload.name = args.name;
+        if (args?.description) payload.description = args.description;
+        if (args?.reference) payload.reference = args.reference;
+        if (args?.price !== undefined) payload.price = [{ price: args.price }];
+        if (args?.category) payload.category = { id: args.category };
+        if (args?.tax) payload.tax = args.tax;
+        if (args?.type) payload.type = args.type;
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("PUT", `/items/${args?.itemId}`, payload), null, 2) }] };
+      }
       case "list_items": {
         const params = new URLSearchParams();
         if (args?.start) params.set("start", String(args.start));
@@ -329,6 +524,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         if (args?.date_to) params.set("date_end", args.date_to);
         return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", `/payments?${params}`), null, 2) }] };
       }
+      case "get_payment":
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", `/payments/${args?.paymentId}`), null, 2) }] };
       case "create_payment": {
         const payload: any = {
           date: args?.date,
@@ -340,6 +537,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         if (args?.client) payload.client = args.client;
         if (args?.observations) payload.observations = args.observations;
         return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("POST", "/payments", payload), null, 2) }] };
+      }
+      case "void_payment":
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("PUT", `/payments/${args?.paymentId}/void`, { status: "void" }), null, 2) }] };
+      case "list_categories": {
+        const params = new URLSearchParams();
+        if (args?.start) params.set("start", String(args.start));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.query) params.set("query", args.query);
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", `/categories?${params}`), null, 2) }] };
+      }
+      case "list_bank_accounts": {
+        const params = new URLSearchParams();
+        if (args?.start) params.set("start", String(args.start));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.type) params.set("type", args.type);
+        return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", `/bank-accounts?${params}`), null, 2) }] };
       }
       case "get_company":
         return { content: [{ type: "text", text: JSON.stringify(await alegraRequest("GET", "/company"), null, 2) }] };
@@ -365,7 +578,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-alegra", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-alegra", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
