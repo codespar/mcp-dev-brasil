@@ -1,25 +1,24 @@
 <p align="center">
   <h1 align="center">MCP Dev LATAM 🌎</h1>
   <p align="center">
-    <strong>Every API your AI agent needs to run a business in Latin America.</strong><br>
-    <em>Brazil 🇧🇷 · Mexico 🇲🇽 · Argentina 🇦🇷 · Colombia 🇨🇴 — plus 4 agentic payment protocols.</em>
+    <strong>Every commerce API your AI agent needs to run a business in Latin America.</strong><br>
+    <em>Brazil 🇧🇷 · Mexico 🇲🇽 · Argentina 🇦🇷 · Colombia 🇨🇴 · Chile 🇨🇱 · Peru 🇵🇪 · plus 4 agentic payment protocols.</em>
   </p>
   <p align="center">
-    57 MCP servers · 453 tools · 4 countries · MIT License
+    109 MCP servers · 2,289 tools · 6 countries · MIT License
   </p>
   <p align="center">
-    <a href="https://codespar.dev/mcp">Landing Page</a> ·
+    <a href="https://codespar.dev/servers">Catalog</a> ·
     <a href="#quick-start">Quick Start</a> ·
     <a href="#agentic-payment-protocols">Agentic Protocols</a> ·
-    <a href="#countries">Countries</a> ·
-    <a href="#servers">All Servers</a> ·
+    <a href="#all-servers">All Servers</a> ·
     <a href="docs/CONTRIBUTING.md">Contribute</a>
   </p>
   <p align="center">
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-    <img src="https://img.shields.io/badge/servers-57-green" alt="57 servers">
-    <img src="https://img.shields.io/badge/tools-453-orange" alt="453 tools">
-    <img src="https://img.shields.io/badge/countries-4-blue" alt="4 countries">
+    <img src="https://img.shields.io/badge/servers-109-green" alt="109 servers">
+    <img src="https://img.shields.io/badge/tools-2,289-orange" alt="2289 tools">
+    <img src="https://img.shields.io/badge/countries-6-blue" alt="6 countries">
     <img src="https://img.shields.io/badge/MCP-compatible-purple" alt="MCP compatible">
   </p>
 </p>
@@ -28,24 +27,24 @@
 
 ## The Problem
 
-AI agents can write code, analyze data, and chat. But they can't **operate a business** — collect payments, issue invoices, ship products, or notify customers. Especially not in Brazil, where every service has its own API, auth pattern, and quirks.
+AI agents can write code, analyze data, and chat. But they can't **operate a business** — collect payments, issue invoices, ship products, or notify customers. Especially not in Latin America, where every service has its own API, auth pattern, and quirks (mTLS for BACEN Pix v2, JWT-RSA for STP-SPEI, AFIP web services, contract-gated developer portals, and on).
 
-Meanwhile, five categories of agentic payment infrastructure are shipping in parallel — checkout protocols, authorization layers, micropayment rails, identity frameworks, and issuing tools — and **none of them compose cleanly**.
+Meanwhile, four agentic payment protocols are shipping in parallel — checkout protocols (Stripe ACP, Google UCP), authorization layers (AP2), and micropayment rails (x402) — and **none of them compose cleanly** with each other or with the regional rails businesses actually run on.
 
-**MCP Dev Brasil bridges both gaps.** Traditional Brazilian services + the new agentic payment protocols, all accessible through a single MCP interface.
+**MCP Dev LATAM bridges both gaps.** Traditional LATAM services + the new agentic payment protocols, all accessible through a single MCP interface.
 
 ## The Solution
 
-MCP Brasil gives AI agents typed tools to interact with Brazilian APIs and agentic payment protocols. Each server wraps a real service — payments, fiscal, logistics, messaging, banking, ERP, crypto, and now **agentic protocols** — so your agent can operate a complete business workflow.
+Each MCP server in this repo wraps a real provider — payments, fiscal, logistics, messaging, banking, ERP, identity, fraud, crypto, and the agentic protocols — so your agent can operate a complete business workflow.
 
 ```
 🛒 Customer places order
-  → 💳 Agent charges via Pix (Zoop)
-  → 📄 Agent issues NFe (Nuvem Fiscal)
-  → 📦 Agent generates shipping label (Melhor Envio)
-  → 📱 Agent sends tracking via WhatsApp (Z-API)
-  → 📊 Agent records in ERP (Omie)
-  → 🏦 Agent reconciles balance (Stark Bank)
+  → 💳 Agent charges via Pix (Asaas / Mercado Pago / Zoop)
+  → 📄 Agent issues NFe (Nuvem Fiscal / Focus NFe / NFe.io)
+  → 📦 Agent generates shipping label (Melhor Envio / Skydropx)
+  → 📱 Agent sends tracking via WhatsApp (Z-API / WhatsApp Cloud)
+  → 📊 Agent records in ERP (Omie / Bling / Tiny)
+  → 🏦 Agent reconciles balance (Stark Bank / Itaú / BTG)
 ```
 
 **Six systems. Zero human intervention. One agent.**
@@ -54,16 +53,14 @@ MCP Brasil gives AI agents typed tools to interact with Brazilian APIs and agent
 
 ## Agentic Payment Protocols
 
-> _"The bridge looks more like middleware than a protocol."_ — The middleware is MCP.
-
-Three new servers that bridge the emerging agentic payment stack:
+Four servers that bridge the emerging agentic payment stack:
 
 | Protocol | Server | Tools | What it does |
 |----------|--------|-------|-------------|
-| **[Google UCP](packages/payments/ucp)** | `@codespar/mcp-ucp` | 21 | Universal Commerce Protocol — agentic shopping, cart, checkout, orders, delivery, identity. Google's full commerce stack for AI agents. |
-| **[Stripe ACP](packages/payments/stripe-acp)** | `@codespar/mcp-stripe-acp` | 16 | Agentic Commerce Protocol — AI agent checkout, payment delegation, products, invoices. Live in ChatGPT with 1M+ Shopify merchants. |
+| **[Google UCP](packages/payments/ucp)** | `@codespar/mcp-ucp` | 20 | Universal Commerce Protocol — agentic shopping, cart, checkout, orders, delivery, identity. Google's full commerce stack for AI agents. |
+| **[Stripe ACP](packages/payments/stripe-acp)** | `@codespar/mcp-stripe-acp` | 24 | Agentic Commerce Protocol — AI agent checkout, payment delegation, products, invoices. Live in ChatGPT with 1M+ Shopify merchants. |
 | **[x402](packages/crypto/x402)** | `@codespar/mcp-x402` | 10 | HTTP-native micropayments by Coinbase — when an agent hits a 402, it pays USDC on Base/Solana and retries. Pure HTTP, no checkout UI. |
-| **[AP2](packages/payments/ap2)** | `@codespar/mcp-ap2` | 13 | Google's Agent-to-Agent Payment Protocol — authorization, audit trails, scoped spend limits. 60+ partners including Visa, Mastercard, Stripe, PayPal. |
+| **[AP2](packages/payments/ap2)** | `@codespar/mcp-ap2` <sub>alpha</sub> | 22 | Google's Agent-to-Agent Payment Protocol — authorization, audit trails, scoped spend limits. 60+ partners including Visa, Mastercard, Stripe, PayPal. |
 
 ### The Autonomy Spectrum
 
@@ -84,8 +81,6 @@ Each protocol sits at a different level of agent autonomy:
 
 ### The Convergence Stack
 
-These protocols aren't competing — they're converging into layers:
-
 ```
 ┌─────────────────────────────────────────────┐
 │  Application Layer        ACP / UCP         │  Chat UX, product discovery
@@ -98,7 +93,7 @@ These protocols aren't competing — they're converging into layers:
 └─────────────────────────────────────────────┘
 ```
 
-**CodeSpar sits at the Tool Layer** — the middleware that connects every application, authorization, and settlement protocol through one interface.
+**MCP Dev LATAM sits at the Tool Layer** — the middleware that connects every application, authorization, and settlement protocol through one interface.
 
 ### Why this matters
 
@@ -108,25 +103,9 @@ Agent needs to buy something
   ├── Retail checkout?     → Stripe ACP (create_checkout → complete_checkout)
   ├── API micropayment?    → x402 (pay_request → USDC $0.001 → data returned)
   ├── Agent-to-agent?      → AP2 (authorize_payment → execute_payment)
-  └── Brazilian merchant?  → Asaas / Zoop / PagSeguro (traditional rails)
+  └── LATAM merchant?      → Asaas / Mercado Pago / Conekta / Wompi / etc.
 
 All via MCP. Same interface. One agent.
-```
-
-### Quick Start — Agentic Protocols
-
-```bash
-# Google UCP — full agentic commerce (early access)
-npx @codespar/mcp-ucp
-
-# Stripe ACP — agentic checkout (test mode, free)
-npx @codespar/mcp-stripe-acp
-
-# x402 — HTTP micropayments (testnet, free)
-npx @codespar/mcp-x402
-
-# AP2 — agent authorization (early access)
-npx @codespar/mcp-ap2
 ```
 
 ---
@@ -147,209 +126,262 @@ Add to `~/.config/claude/claude_desktop_config.json`:
         "STRIPE_API_KEY": "sk_test_..."
       }
     },
-    "zoop": {
+    "asaas": {
       "command": "npx",
-      "args": ["-y", "@codespar/mcp-zoop"],
+      "args": ["-y", "@codespar/mcp-asaas"],
       "env": {
-        "ZOOP_API_KEY": "your-api-key",
-        "ZOOP_MARKETPLACE_ID": "your-marketplace-id"
+        "ASAAS_API_KEY": "your-api-key",
+        "ASAAS_SANDBOX": "true"
       }
     }
   }
 }
 ```
 
+For alpha packages (contract-gated providers like Itaú, Bradesco, Santander, Caixa, BB, BTG, C6, Sicoob, Bradesco, Matera), add `@alpha` to the install:
+
+```bash
+npx -y @codespar/mcp-itau@alpha
+```
+
 ### With any MCP client
 
 ```bash
-npx @codespar/mcp-stripe-acp   # Agentic Commerce Protocol
-npx @codespar/mcp-x402         # HTTP micropayments
-npx @codespar/mcp-ap2          # Agent authorization
-npx @codespar/mcp-zoop         # Payments (marketplace, split)
-npx @codespar/mcp-nuvem-fiscal # Fiscal
-npx @codespar/mcp-melhor-envio # Logistics
-npx @codespar/mcp-z-api        # WhatsApp
-npx @codespar/mcp-omie         # ERP
-npx @codespar/mcp-stark-bank   # Banking
-npx @codespar/mcp-dev-brasil-api   # CEP, CNPJ (no key needed!)
+npx @codespar/mcp-stripe-acp        # Agentic Commerce Protocol
+npx @codespar/mcp-ucp                # Google Universal Commerce Protocol
+npx @codespar/mcp-x402               # HTTP micropayments (Coinbase)
+npx @codespar/mcp-ap2@alpha          # Agent-to-Agent payment authorization
+
+npx @codespar/mcp-asaas              # BR billing + Pix
+npx @codespar/mcp-mercado-pago       # LATAM payments
+npx @codespar/mcp-nuvem-fiscal       # NFe / NFSe
+npx @codespar/mcp-melhor-envio       # Multi-carrier shipping
+npx @codespar/mcp-z-api              # WhatsApp messaging
+npx @codespar/mcp-omie               # ERP
+npx @codespar/mcp-stark-bank         # Banking
+npx @codespar/mcp-brasil-api         # CEP, CNPJ (no key needed!)
 ```
 
 ### Try it now (no API key)
 
-BrasilAPI is free and public. Try it in your terminal:
+[BrasilAPI](packages/identity/brasil-api) and [BCRA](packages/argentina/bcra) are public — no key required. Try it in your terminal:
 
 ```bash
-npx @codespar/mcp-dev-brasil-api
+npx @codespar/mcp-brasil-api
 ```
 
-Then ask your agent: _"What is the address for CEP 01001-000?"_ or _"Look up CNPJ 00.000.000/0001-91"_
+Then ask your agent: _"What is the address for CEP 01001-000?"_ or _"Look up CNPJ 00.000.000/0001-91"_.
 
 ---
 
 ## The Complete Loop
 
-This is what makes MCP Brasil different — not individual connectors, but a **complete business workflow** across verticals:
+This is what makes the LATAM catalog different — not individual connectors, but a **complete business workflow** across verticals:
 
-| Step | Vertical | Server | What the agent does |
-|------|----------|--------|-------------------|
-| 1 | 💳 Payment | Zoop | Creates Pix charge, splits to sellers |
-| 2 | 📄 Fiscal | Nuvem Fiscal | Issues NFe/NFSe when payment confirmed |
-| 3 | 📦 Logistics | Melhor Envio | Quotes shipping, generates label |
-| 4 | 📱 Messaging | Z-API | Sends tracking code via WhatsApp |
-| 5 | 📊 ERP | Omie | Records order, updates inventory |
-| 6 | 🏦 Banking | Stark Bank | Reconciles balance, creates reports |
+| Step | Vertical | Example providers | What the agent does |
+|------|----------|-------------------|---------------------|
+| 1 | 💳 Payment | Asaas / Mercado Pago / Zoop | Creates Pix charge, splits to sellers |
+| 2 | 📄 Fiscal | Nuvem Fiscal / NFe.io / Focus NFe | Issues NFe/NFSe when payment confirmed |
+| 3 | 📦 Logistics | Melhor Envio / Correios / Skydropx | Quotes shipping, generates label |
+| 4 | 📱 Messaging | Z-API / WhatsApp Cloud / Twilio | Sends tracking via customer's preferred channel |
+| 5 | 📊 ERP | Omie / Bling / Tiny / Conta Azul | Records order, updates inventory |
+| 6 | 🏦 Banking | Stark Bank / Itaú / BTG | Reconciles balance, creates reports |
 
-To orchestrate all 6 steps with governance, approval workflows, and audit trails — use [CodeSpar](https://codespar.dev).
+To orchestrate all six steps with governance, approval workflows, and audit trails — use [CodeSpar](https://codespar.dev).
 
 ---
 
-## Servers
+## All Servers
 
-### ⚡ Agentic Protocols (4 servers)
+Browse the full catalog at [codespar.dev/servers](https://codespar.dev/servers). Each server has its own README, env-var requirements, and tool reference under `packages/<category>/<slug>/`.
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Google UCP](packages/payments/ucp)** | 20 | Universal Commerce Protocol — shopping, cart, checkout, orders, delivery, identity | UCP API Key |
-| **[Stripe ACP](packages/payments/stripe-acp)** | 16 | Agentic Commerce Protocol — checkout sessions, payment delegation, products, invoices | Stripe API Key |
-| **[x402](packages/crypto/x402)** | 10 | HTTP micropayments — USDC on Base/Solana, paywalls, machine-to-machine | Facilitator Key |
-| **[AP2](packages/payments/ap2)** | 13 | Agent authorization, audit trails, scoped spend limits | AP2 API Key |
+### 💳 Payments (40 servers)
 
-### 💳 Payments (13 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Mercado Pago](packages/payments/mercado-pago)** | 30 | `@codespar/mcp-mercado-pago` | API Key |
+| **[Stripe](packages/payments/stripe)** | 30 | `@codespar/mcp-stripe` | API Key |
+| **[Zoop](packages/payments/zoop)** | 28 | `@codespar/mcp-zoop` | API Key |
+| **[Adyen](packages/payments/adyen)** | 25 | `@codespar/mcp-adyen` | API Key |
+| **[Asaas](packages/payments/asaas)** | 24 | `@codespar/mcp-asaas` | API Key |
+| **[Pagseguro](packages/payments/pagseguro)** | 24 | `@codespar/mcp-pagseguro` | API Key |
+| **[Stripe ACP](packages/payments/stripe-acp)** | 24 | `@codespar/mcp-stripe-acp` | API Key |
+| **[Iugu](packages/payments/iugu)** | 23 | `@codespar/mcp-iugu` | API Key |
+| **[Openpay](packages/payments/openpay)** | 23 | `@codespar/mcp-openpay` | API Key |
+| **[AP2](packages/payments/ap2)** <sub>alpha</sub> | 22 | `@codespar/mcp-ap2` | API Key |
+| **[Braintree](packages/payments/braintree)** | 22 | `@codespar/mcp-braintree` | API Key |
+| **[Braspag](packages/payments/braspag)** | 22 | `@codespar/mcp-braspag` | API Key |
+| **[Cielo](packages/payments/cielo)** | 22 | `@codespar/mcp-cielo` | API Key |
+| **[Inter Bank](packages/payments/inter-bank)** | 22 | `@codespar/mcp-inter-bank` | OAuth2 |
+| **[Mercado Libre](packages/payments/mercado-libre)** | 22 | `@codespar/mcp-mercado-libre` | API Key |
+| **[Nubank](packages/payments/nubank)** <sub>alpha</sub> | 22 | `@codespar/mcp-nubank` | OAuth2 |
+| **[Nupay](packages/payments/nupay)** | 22 | `@codespar/mcp-nupay` | OAuth2 |
+| **[Pagar Me](packages/payments/pagar-me)** | 22 | `@codespar/mcp-pagar-me` | API Key |
+| **[Rapyd](packages/payments/rapyd)** | 22 | `@codespar/mcp-rapyd` | API Key |
+| **[Rede](packages/payments/rede)** <sub>alpha</sub> | 22 | `@codespar/mcp-rede` | API Key |
+| **[Safrapay](packages/payments/safrapay)** <sub>alpha</sub> | 22 | `@codespar/mcp-safrapay` | OAuth2 |
+| **[Worldpay](packages/payments/worldpay)** <sub>alpha</sub> | 22 | `@codespar/mcp-worldpay` | API Key |
+| **[Khipu](packages/payments/khipu)** <sub>alpha</sub> | 21 | `@codespar/mcp-khipu` | API Key |
+| **[Stone](packages/payments/stone)** | 21 | `@codespar/mcp-stone` | API Key |
+| **[Wise](packages/payments/wise)** | 21 | `@codespar/mcp-wise` | API Key |
+| **[Airwallex](packages/payments/airwallex)** | 20 | `@codespar/mcp-airwallex` | OAuth2 |
+| **[Culqi](packages/payments/culqi)** | 20 | `@codespar/mcp-culqi` | API Key |
+| **[Getnet](packages/payments/getnet)** | 20 | `@codespar/mcp-getnet` | OAuth2 |
+| **[Izipay](packages/payments/izipay)** <sub>alpha</sub> | 20 | `@codespar/mcp-izipay` | API Key |
+| **[Picpay](packages/payments/picpay)** <sub>alpha</sub> | 20 | `@codespar/mcp-picpay` | API Key |
+| **[UCP](packages/payments/ucp)** | 20 | `@codespar/mcp-ucp` | API Key |
+| **[Vindi](packages/payments/vindi)** | 20 | `@codespar/mcp-vindi` | API Key |
+| **[Paypal](packages/payments/paypal)** | 19 | `@codespar/mcp-paypal` | OAuth2 |
+| **[Transbank](packages/payments/transbank)** <sub>alpha</sub> | 19 | `@codespar/mcp-transbank` | API Key |
+| **[Celcoin](packages/payments/celcoin)** | 18 | `@codespar/mcp-celcoin` | API Key |
+| **[dLocal](packages/payments/dlocal)** | 18 | `@codespar/mcp-dlocal` | API Key |
+| **[Ebanx](packages/payments/ebanx)** | 18 | `@codespar/mcp-ebanx` | API Key |
+| **[Efi](packages/payments/efi)** | 18 | `@codespar/mcp-efi` | API Key |
+| **[Pix BCB](packages/payments/pix-bcb)** | 18 | `@codespar/mcp-pix-bcb` | API Key |
+| **[Chargebee](packages/payments/chargebee)** | 15 | `@codespar/mcp-chargebee` | API Key |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Asaas](packages/payments/asaas)** | 24 | Billing, Pix, boleto, subscriptions, transfers, refunds, notifications | API Key |
-| **[PagSeguro](packages/payments/pagseguro)** | 13 | Orders, charges, Pix QR, refunds, subscriptions, splits | Bearer Token |
-| **[iugu](packages/payments/iugu)** | 8 | Invoices, subscriptions, payment methods | Basic Auth |
-| **[Pix BCB](packages/payments/pix-bcb)** | 8 | Official Central Bank Pix API (cob, DICT) | OAuth2 + mTLS |
-| **[Zoop](packages/payments/zoop)** | 28 | Marketplace payments, split rules, sellers, subscriptions, disputes, Pix | Basic Auth |
-| **[Pagar.me](packages/payments/pagar-me)** | 10 | Orders, charges, recipients, transfers | Basic Auth |
-| **[EBANX](packages/payments/ebanx)** | 7 | Cross-border payments, payouts, FX rates | Integration Key |
-| **[EFÍ/Gerencianet](packages/payments/efi)** | 8 | Pix, boleto, carnet, open finance | OAuth2 |
-| **[Vindi](packages/payments/vindi)** | 10 | Recurring billing, subscriptions, invoices | API Key |
-| **[Cielo](packages/payments/cielo)** | 13 | Credit card, debit, boleto, Pix, recurrent payments | Merchant Key |
-| **[Stone](packages/payments/stone)** | 8 | Open banking, payments, Pix, transfers | OAuth2 |
-| **[Celcoin](packages/payments/celcoin)** | 8 | Pix, boleto, transfers, bill payments, top-ups | OAuth2 |
-| **[AP2](packages/payments/ap2)** | 13 | Google's Agent-to-Agent Payment Protocol | AP2 API Key |
+### 🏦 Banking (12 servers)
 
-### 📄 Fiscal (3 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Stark Bank](packages/banking/stark-bank)** | 27 | `@codespar/mcp-stark-bank` | API Key |
+| **[Caixa](packages/banking/caixa)** <sub>alpha</sub> | 23 | `@codespar/mcp-caixa` | OAuth2 |
+| **[Santander](packages/banking/santander)** <sub>alpha</sub> | 23 | `@codespar/mcp-santander` | OAuth2 |
+| **[Bradesco](packages/banking/bradesco)** <sub>alpha</sub> | 22 | `@codespar/mcp-bradesco` | OAuth2 |
+| **[Itau](packages/banking/itau)** <sub>alpha</sub> | 22 | `@codespar/mcp-itau` | OAuth2 |
+| **[Matera](packages/banking/matera)** <sub>alpha</sub> | 22 | `@codespar/mcp-matera` | OAuth2 |
+| **[Dock](packages/banking/dock)** <sub>alpha</sub> | 20 | `@codespar/mcp-dock` | OAuth2 |
+| **[Open Finance](packages/banking/open-finance)** | 18 | `@codespar/mcp-open-finance` | API Key |
+| **[C6](packages/banking/c6)** <sub>alpha</sub> | 14 | `@codespar/mcp-c6` | OAuth2 |
+| **[Banco Do Brasil](packages/banking/banco-do-brasil)** <sub>alpha</sub> | 13 | `@codespar/mcp-banco-do-brasil` | OAuth2 |
+| **[Sicoob](packages/banking/sicoob)** <sub>alpha</sub> | 13 | `@codespar/mcp-sicoob` | OAuth2 |
+| **[BTG](packages/banking/btg)** <sub>alpha</sub> | 12 | `@codespar/mcp-btg` | OAuth2 |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Focus NFe](packages/fiscal/focus-nfe)** | 8 | NFe/NFSe/NFCe emission and management | Basic Auth |
-| **[Nuvem Fiscal](packages/fiscal/nuvem-fiscal)** | 15 | NFe/NFSe/NFCe/CTe/MDFe, CNPJ/CEP lookup | OAuth2 |
-| **[Conta Azul](packages/fiscal/conta-azul)** | 10 | Accounting, invoicing, customers, products | OAuth2 |
+### 📄 Fiscal (Brasil) (4 servers)
 
-### 📱 Communication (5 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Nuvem Fiscal](packages/fiscal/nuvem-fiscal)** | 24 | `@codespar/mcp-nuvem-fiscal` | API Key |
+| **[Nfe Io](packages/fiscal/nfe-io)** | 22 | `@codespar/mcp-nfe-io` | API Key |
+| **[Conta Azul](packages/fiscal/conta-azul)** | 20 | `@codespar/mcp-conta-azul` | API Key |
+| **[Focus Nfe](packages/fiscal/focus-nfe)** | 19 | `@codespar/mcp-focus-nfe` | API Key |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Evolution API](packages/communication/evolution-api)** | 15 | WhatsApp automation (Baileys) | API Key |
-| **[Z-API](packages/communication/z-api)** | 20 | WhatsApp messaging, contacts, groups, labels | Instance + Token |
-| **[Zenvia](packages/communication/zenvia)** | 8 | Multichannel (SMS, WhatsApp, RCS) | API Token |
-| **[RD Station](packages/communication/rd-station)** | 8 | Marketing automation, CRM, leads | Bearer Token |
-| **[Take Blip](packages/communication/take-blip)** | 8 | Chatbots, messaging, contacts, broadcasts | Access Key |
+### 📱 Communication (8 servers)
 
-### 🇧🇷 Identity (1 server)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Z API](packages/communication/z-api)** | 27 | `@codespar/mcp-z-api` | API Key |
+| **[Evolution API](packages/communication/evolution-api)** | 25 | `@codespar/mcp-evolution-api` | API Key |
+| **[Twilio](packages/communication/twilio)** | 22 | `@codespar/mcp-twilio` | API Key |
+| **[Whatsapp Cloud](packages/communication/whatsapp-cloud)** | 22 | `@codespar/mcp-whatsapp-cloud` | API Key |
+| **[Sendgrid](packages/communication/sendgrid)** | 20 | `@codespar/mcp-sendgrid` | API Key |
+| **[Rd Station](packages/communication/rd-station)** | 18 | `@codespar/mcp-rd-station` | API Key |
+| **[Take Blip](packages/communication/take-blip)** | 18 | `@codespar/mcp-take-blip` | API Key |
+| **[Zenvia](packages/communication/zenvia)** | 18 | `@codespar/mcp-zenvia` | API Key |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[BrasilAPI](packages/identity/brasil-api)** | 15 | CEP, CNPJ, banks, holidays, FIPE, DDD, IBGE, SELIC, weather | **None** (free) |
+### 📦 E-commerce / Logistics (6 servers)
 
-### 🏦 Banking (2 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Vtex](packages/ecommerce/vtex)** | 33 | `@codespar/mcp-vtex` | API Key |
+| **[Shopify](packages/ecommerce/shopify)** | 28 | `@codespar/mcp-shopify` | API Key |
+| **[Amazon](packages/ecommerce/amazon)** <sub>alpha</sub> | 24 | `@codespar/mcp-amazon` | OAuth2 |
+| **[Shopee](packages/ecommerce/shopee)** <sub>alpha</sub> | 22 | `@codespar/mcp-shopee` | API Key |
+| **[Correios](packages/ecommerce/correios)** <sub>alpha</sub> | 21 | `@codespar/mcp-correios` | API Key |
+| **[Melhor Envio](packages/ecommerce/melhor-envio)** | 18 | `@codespar/mcp-melhor-envio` | API Key |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Stark Bank](packages/banking/stark-bank)** | 15 | Transfers, boleto, invoices, Pix, balance, brcode, deposits | Access Token |
-| **[Open Finance](packages/banking/open-finance)** | 8 | Open Finance Brasil — accounts, transactions, consents, investments | OAuth2 |
+### 📊 ERP / Accounting (5 servers)
 
-### 📦 E-commerce / Logistics (3 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Omie](packages/erp/omie)** | 30 | `@codespar/mcp-omie` | API Key |
+| **[Bling](packages/erp/bling)** | 28 | `@codespar/mcp-bling` | API Key |
+| **[Xero](packages/erp/xero)** | 24 | `@codespar/mcp-xero` | API Key |
+| **[Quickbooks](packages/erp/quickbooks)** | 22 | `@codespar/mcp-quickbooks` | API Key |
+| **[Tiny](packages/erp/tiny)** | 21 | `@codespar/mcp-tiny` | API Key |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Melhor Envio](packages/ecommerce/melhor-envio)** | 18 | Shipping quotes, tracking, labels, cart, agencies | Bearer Token |
-| **[Correios](packages/ecommerce/correios)** | 11 | Tracking, shipping, collections, reverse logistics | OAuth |
-| **[VTEX](packages/ecommerce/vtex)** | 15 | E-commerce, orders, products, inventory, categories, shipping | App Key + Token |
+### 🪪 Identity & KYC (5 servers)
 
-### 📊 ERP (3 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Brasil API](packages/identity/brasil-api)** | 24 | `@codespar/mcp-brasil-api` | No auth |
+| **[Jumio](packages/identity/jumio)** | 20 | `@codespar/mcp-jumio` | API Key |
+| **[Onfido](packages/identity/onfido)** | 20 | `@codespar/mcp-onfido` | API Key |
+| **[Persona](packages/identity/persona)** | 20 | `@codespar/mcp-persona` | API Key |
+| **[Unico](packages/identity/unico)** <sub>alpha</sub> | 18 | `@codespar/mcp-unico` | OAuth2 |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Omie](packages/erp/omie)** | 15 | Customers, products, orders, invoices, services, purchases | App Key + Secret |
-| **[Bling](packages/erp/bling)** | 10 | ERP, products, orders, invoices, stock management | OAuth2 |
-| **[Tiny](packages/erp/tiny)** | 10 | ERP, products, orders, invoices, stock, accounts payable | API Token |
+### 🛡️ Fraud & Risk (4 servers)
 
-### 🪙 Crypto / Stablecoins (5 servers)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Sift](packages/fraud/sift)** <sub>alpha</sub> | 20 | `@codespar/mcp-sift` | API Key |
+| **[Clearsale](packages/fraud/clearsale)** <sub>alpha</sub> | 18 | `@codespar/mcp-clearsale` | API Key |
+| **[Konduto](packages/fraud/konduto)** <sub>alpha</sub> | 18 | `@codespar/mcp-konduto` | API Key |
+| **[Legiti](packages/fraud/legiti)** <sub>alpha</sub> | 18 | `@codespar/mcp-legiti` | API Key |
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[x402](packages/crypto/x402)** | 10 | HTTP micropayments — USDC on Base/Solana | Facilitator Key |
-| **[UnblockPay](packages/crypto/unblockpay)** | 10 | Fiat-to-stablecoin onramp/offramp, wallets, transfers | API Key |
-| **[Circle](packages/crypto/circle)** | 10 | USDC payments, wallets, payouts, transfers | API Key |
-| **[Mercado Bitcoin](packages/crypto/mercado-bitcoin)** | 10 | Brazilian crypto exchange, trading, orderbook, withdrawals | API Key + Secret |
-| **[Bitso](packages/crypto/bitso)** | 10 | Latin American crypto exchange, trading, funding, withdrawals | API Key + Secret |
+### 🪙 Crypto / Stablecoins (9 servers)
 
-### 🌎 LATAM-Wide (4 servers)
-
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Mercado Libre](packages/payments/mercado-libre)** | 14 | LATAM marketplace (18 countries) — products, orders, sellers, shipments | OAuth2 |
-| **[Mercado Pago](packages/payments/mercado-pago)** | 12 | LATAM payments — cards, PIX, checkout, refunds | Bearer Token |
-| **[Nubank](packages/payments/nubank)** | 10 | Brazilian neobank via Open Finance — accounts, PIX, transactions | OAuth2 |
-| **[Banco Inter](packages/payments/inter-bank)** | 12 | Brazilian digital bank — boleto, PIX, statements, transfers | OAuth2 |
-
-### 🇲🇽 Mexico (6 servers)
-
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Conekta](packages/mexico/conekta)** | 10 | Payment gateway — cards, OXXO cash, SPEI | Basic Auth |
-| **[FacturAPI](packages/mexico/facturapi)** | 10 | CFDI e-invoicing (Mexican NFe) | Bearer Token |
-| **[STP/SPEI](packages/mexico/stp-spei)** | 8 | Instant bank transfers (Mexico's PIX) | API Key |
-| **[Skydropx](packages/mexico/skydropx)** | 10 | Multi-carrier shipping (Estafeta, DHL, FedEx) | Bearer Token |
-| **[Bind ERP](packages/mexico/bind-erp)** | 10 | Cloud ERP | API Key |
-| **[Belvo](packages/mexico/belvo)** | 10 | Open Finance aggregator (MX/AR/CO) | Basic Auth |
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Circle](packages/crypto/circle)** | 23 | `@codespar/mcp-circle` | API Key |
+| **[Foxbit](packages/crypto/foxbit)** | 21 | `@codespar/mcp-foxbit` | API Key |
+| **[Bitso](packages/crypto/bitso)** | 20 | `@codespar/mcp-bitso` | API Key |
+| **[Mercado Bitcoin](packages/crypto/mercado-bitcoin)** | 20 | `@codespar/mcp-mercado-bitcoin` | API Key |
+| **[Moonpay](packages/crypto/moonpay)** | 20 | `@codespar/mcp-moonpay` | API Key |
+| **[Unblockpay](packages/crypto/unblockpay)** | 20 | `@codespar/mcp-unblockpay` | API Key |
+| **[Coinbase Commerce](packages/crypto/coinbase-commerce)** | 18 | `@codespar/mcp-coinbase-commerce` | API Key |
+| **[Transak](packages/crypto/transak)** <sub>alpha</sub> | 18 | `@codespar/mcp-transak` | API Key |
+| **[x402](packages/crypto/x402)** | 10 | `@codespar/mcp-x402` | API Key |
 
 ### 🇦🇷 Argentina (5 servers)
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[AFIP](packages/argentina/afip)** | 8 | Electronic invoicing (Factura Electrónica) | Certificate |
-| **[Andreani](packages/argentina/andreani)** | 8 | Logistics/courier (largest in Argentina) | JWT |
-| **[Colppy](packages/argentina/colppy)** | 8 | Cloud accounting + AFIP invoicing | API Key |
-| **[Tienda Nube](packages/argentina/tienda-nube)** | 10 | E-commerce platform (LATAM Shopify) | Bearer Token |
-| **[BCRA](packages/argentina/bcra)** | 6 | Central Bank public data (exchange rates, free) | **None** (free) |
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Tienda Nube](packages/argentina/tienda-nube)** | 24 | `@codespar/mcp-tienda-nube` | API Key |
+| **[Colppy](packages/argentina/colppy)** <sub>alpha</sub> | 22 | `@codespar/mcp-colppy` | API Key |
+| **[AFIP](packages/argentina/afip)** <sub>alpha</sub> | 20 | `@codespar/mcp-afip` | API Key |
+| **[Andreani](packages/argentina/andreani)** <sub>alpha</sub> | 18 | `@codespar/mcp-andreani` | API Key |
+| **[BCRA](packages/argentina/bcra)** | 16 | `@codespar/mcp-bcra` | No auth |
 
 ### 🇨🇴 Colombia (5 servers)
 
-| Server | Tools | Description | Auth |
-|--------|-------|-------------|------|
-| **[Wompi](packages/colombia/wompi)** | 10 | Payment gateway by Bancolombia (cards, PSE, Nequi) | Bearer Token |
-| **[Siigo](packages/colombia/siigo)** | 10 | Accounting + DIAN e-invoicing | Bearer Token |
-| **[Nequi](packages/colombia/nequi)** | 6 | Digital wallet (50M+ users) | OAuth2 |
-| **[Coordinadora](packages/colombia/coordinadora)** | 8 | Logistics/courier | API Key |
-| **[Alegra](packages/colombia/alegra)** | 10 | Cloud accounting (cross-LATAM) | Basic Auth |
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Siigo](packages/colombia/siigo)** | 22 | `@codespar/mcp-siigo` | API Key |
+| **[Wompi](packages/colombia/wompi)** | 22 | `@codespar/mcp-wompi` | API Key |
+| **[Alegra](packages/colombia/alegra)** | 20 | `@codespar/mcp-alegra` | API Key |
+| **[Coordinadora](packages/colombia/coordinadora)** <sub>alpha</sub> | 19 | `@codespar/mcp-coordinadora` | API Key |
+| **[Nequi](packages/colombia/nequi)** <sub>alpha</sub> | 16 | `@codespar/mcp-nequi` | OAuth2 |
 
-### 🔜 Coming Soon
+### 🇲🇽 Mexico (6 servers)
 
-Foxbit · BRLA · Coinbase · Transak · PagBrasil · Juno · NFe.io · PlugNotas · Movidesk · Infobip · Frenet · Loggi · Kangu · ReceitaWS · BigDataCorp · Sankhya · Totvs · Clip (MX) · Contpaqi (MX) · Ualá (AR) · Naranja X (AR) · Transbank (CL) · Nequi (CO expanded) · Rappi (CO)
+| Server | Tools | npm | Auth |
+|---|---|---|---|
+| **[Belvo](packages/mexico/belvo)** | 24 | `@codespar/mcp-belvo` | API Key |
+| **[Skydropx](packages/mexico/skydropx)** | 23 | `@codespar/mcp-skydropx` | API Key |
+| **[Conekta](packages/mexico/conekta)** | 21 | `@codespar/mcp-conekta` | API Key |
+| **[Bind ERP](packages/mexico/bind-erp)** | 20 | `@codespar/mcp-bind-erp` | API Key |
+| **[Facturapi](packages/mexico/facturapi)** | 20 | `@codespar/mcp-facturapi` | API Key |
+| **[STP/SPEI](packages/mexico/stp-spei)** <sub>alpha</sub> | 18 | `@codespar/mcp-stp-spei` | API Key |
+
 
 ---
 
 ## Why MCP?
 
-[Model Context Protocol](https://modelcontextprotocol.io/) is the open standard for connecting AI agents to external tools. Instead of each agent building its own integrations, MCP provides a typed, discoverable interface that works with Claude, ChatGPT, Copilot, Cursor, and more.
+[Model Context Protocol](https://modelcontextprotocol.io/) is the open standard for connecting AI agents to external tools. Instead of each agent building its own integrations, MCP provides a typed, discoverable interface that works with Claude, ChatGPT, Cursor, VS Code, and more.
 
 ```
 AI Agent (Claude, ChatGPT, Cursor)
     ↕
 MCP Server (this repo)
     ↕
-Brazilian API / Agentic Protocol (Stripe ACP, x402, Zoop, etc.)
+LATAM API / Agentic Protocol (Stripe ACP, x402, Asaas, Mercado Pago, NFe.io, etc.)
 ```
 
 Each MCP server in this repo:
 - Exposes **typed tools** with input/output schemas
-- Handles **authentication** (OAuth, API keys, Basic Auth)
+- Handles **authentication** (OAuth, mTLS, API keys, Basic Auth, JWT-RSA, signed requests)
 - Supports **dual transport** — stdio (default) and **Streamable HTTP** (`--http` flag)
 - Compatible with **Claude Managed Agents** via MCP Connector
 - Supports **sandbox mode** for safe testing
@@ -360,7 +392,7 @@ Each MCP server in this repo:
 Any server can run as an HTTP server for remote/cloud use:
 
 ```bash
-# stdio (default — local, Claude Desktop, Cursor)
+# stdio (default — local, Claude Desktop, Cursor, Claude Code)
 npx @codespar/mcp-asaas
 
 # HTTP (remote — Managed Agents, cloud deployments)
@@ -373,21 +405,37 @@ HTTP mode exposes `/mcp` (Streamable HTTP) and `/health` (status check).
 
 ---
 
+## Alpha vs stable
+
+About a third of the catalog ships under the `alpha` npm dist-tag. These packages have correct tool schemas and auth flow, but the endpoint paths are best-guesses — typically because the provider's developer portal is contract-gated (BR public banks, AR central authority APIs, MX bank-transfer providers). They're flagged with `TODO(verify)` in source.
+
+```bash
+npm install @codespar/mcp-itau@alpha
+```
+
+Stable packages (the majority) install with the default tag:
+
+```bash
+npm install @codespar/mcp-stripe
+```
+
+Status is shown on every package page at [codespar.dev/servers](https://codespar.dev/servers) and in each package README.
+
+---
+
 ## About CodeSpar
 
-[CodeSpar](https://codespar.dev) is an open source multi-agent platform that deploys autonomous AI coding agents to WhatsApp, Slack, Telegram, and Discord.
+[CodeSpar](https://codespar.dev) builds **commerce infrastructure for AI agents in Latin America** — an MCP catalog (this repo), a runtime + SDK ([`@codespar/sdk`](https://www.npmjs.com/package/@codespar/sdk) on npm, [`codespar`](https://pypi.org/project/codespar/) on PyPI), and a managed-tier governance product (AgentGate: programmable wallet, policy engine, CFO-grade audit, fiscal-compliance certifications).
 
-The MCP Generator in CodeSpar Enterprise can automatically generate MCP servers from API specifications — that's how this repo was bootstrapped.
-
-**Individual MCP servers are useful. Orchestrating many with governance is powerful.** That's what CodeSpar does — including a [Payment Gateway](https://codespar.dev/enterprise) that integrates policy engine, payment routing, and mandate authorization across all rails.
+**Individual MCP servers are useful. Orchestrating many with governance is powerful.** That's what CodeSpar does.
 
 ---
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+We welcome contributions. See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
-**Want a server for a service not listed?** [Open an issue](https://github.com/codespar/mcp-dev-brasil/issues) with the "server request" label.
+**Want a server for a service not listed?** [Open a server-request issue](https://github.com/codespar/mcp-dev-latam/issues/new?template=server-request.yml) — there's a structured form with name, npm package, docs link, auth flow.
 
 ## License
 
