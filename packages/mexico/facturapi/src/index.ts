@@ -3,17 +3,13 @@
 /**
  * MCP Server for FacturAPI — Mexican CFDI e-invoicing (equivalent to Brazil's NFe).
  *
- * Tools:
- * - create_invoice: Create a CFDI invoice
- * - get_invoice: Get invoice by ID
- * - list_invoices: List invoices with filters
- * - cancel_invoice: Cancel an invoice
- * - download_invoice_pdf: Download invoice as PDF
- * - download_invoice_xml: Download invoice as XML
- * - create_customer: Create a customer
- * - get_customer: Get customer by ID
- * - list_products: List products
- * - create_product: Create a product
+ * Tools (20):
+ * - create_invoice / get_invoice / list_invoices / cancel_invoice
+ * - download_invoice_pdf / download_invoice_xml / send_invoice_email
+ * - create_customer / get_customer / list_customers / update_customer / delete_customer
+ * - create_product / get_product / list_products / update_product / delete_product
+ * - create_receipt / list_receipts
+ * - list_webhooks
  *
  * Environment:
  *   FACTURAPI_API_KEY — API key for authentication
@@ -44,11 +40,18 @@ async function facturRequest(method: string, path: string, body?: unknown): Prom
     const err = await res.text();
     throw new Error(`FacturAPI ${res.status}: ${err}`);
   }
-  return res.json();
+  // DELETE may return empty body
+  const text = await res.text();
+  if (!text) return { ok: true };
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
 }
 
 const server = new Server(
-  { name: "mcp-facturapi", version: "0.1.0" },
+  { name: "mcp-facturapi", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -138,6 +141,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "send_invoice_email",
+      description: "Send invoice (PDF + XML) by email to the customer or to specific recipients",
+      inputSchema: {
+        type: "object",
+        properties: {
+          invoiceId: { type: "string", description: "Invoice ID" },
+          email: {
+            oneOf: [
+              { type: "string", description: "Single recipient email" },
+              { type: "array", items: { type: "string" }, description: "Multiple recipient emails" },
+            ],
+            description: "Override recipient(s); if omitted, sends to customer email on file",
+          },
+        },
+        required: ["invoiceId"],
+      },
+    },
+    {
       name: "create_customer",
       description: "Create a customer for invoicing",
       inputSchema: {
@@ -162,14 +183,40 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "list_products",
-      description: "List products",
+      name: "list_customers",
+      description: "List customers with optional filters",
       inputSchema: {
         type: "object",
         properties: {
+          q: { type: "string", description: "Search query (matches legal_name / tax_id)" },
           limit: { type: "number", description: "Results limit" },
           page: { type: "number", description: "Page number" },
         },
+      },
+    },
+    {
+      name: "update_customer",
+      description: "Update an existing customer (partial update)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          customerId: { type: "string", description: "Customer ID" },
+          legal_name: { type: "string", description: "Legal name (razon social)" },
+          tax_id: { type: "string", description: "RFC (tax ID)" },
+          tax_system: { type: "string", description: "SAT tax system code" },
+          email: { type: "string", description: "Customer email" },
+          zip: { type: "string", description: "Postal code" },
+        },
+        required: ["customerId"],
+      },
+    },
+    {
+      name: "delete_customer",
+      description: "Delete a customer",
+      inputSchema: {
+        type: "object",
+        properties: { customerId: { type: "string", description: "Customer ID" } },
+        required: ["customerId"],
       },
     },
     {
@@ -186,6 +233,103 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           unit_name: { type: "string", description: "Unit name" },
         },
         required: ["description", "product_key", "price"],
+      },
+    },
+    {
+      name: "get_product",
+      description: "Get product by ID",
+      inputSchema: {
+        type: "object",
+        properties: { productId: { type: "string", description: "Product ID" } },
+        required: ["productId"],
+      },
+    },
+    {
+      name: "list_products",
+      description: "List products",
+      inputSchema: {
+        type: "object",
+        properties: {
+          q: { type: "string", description: "Search query (matches description)" },
+          limit: { type: "number", description: "Results limit" },
+          page: { type: "number", description: "Page number" },
+        },
+      },
+    },
+    {
+      name: "update_product",
+      description: "Update an existing product (partial update)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          productId: { type: "string", description: "Product ID" },
+          description: { type: "string", description: "Product description" },
+          product_key: { type: "string", description: "SAT product key code" },
+          price: { type: "number", description: "Unit price" },
+          tax_included: { type: "boolean", description: "Whether price includes tax" },
+          unit_key: { type: "string", description: "SAT unit key" },
+          unit_name: { type: "string", description: "Unit name" },
+        },
+        required: ["productId"],
+      },
+    },
+    {
+      name: "delete_product",
+      description: "Delete a product",
+      inputSchema: {
+        type: "object",
+        properties: { productId: { type: "string", description: "Product ID" } },
+        required: ["productId"],
+      },
+    },
+    {
+      name: "create_receipt",
+      description: "Create a receipt (recibo de venta) — the customer can later self-invoice it from the receipt's folio",
+      inputSchema: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            description: "Receipt line items (same shape as invoice items)",
+            items: {
+              type: "object",
+              properties: {
+                product: { type: "string", description: "Product ID or inline product object" },
+                quantity: { type: "number", description: "Quantity" },
+              },
+              required: ["quantity"],
+            },
+          },
+          payment_form: { type: "string", description: "SAT payment form code" },
+          folio_number: { type: "number", description: "Optional folio number" },
+          series: { type: "string", description: "Optional series" },
+        },
+        required: ["items", "payment_form"],
+      },
+    },
+    {
+      name: "list_receipts",
+      description: "List receipts with filters",
+      inputSchema: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["pending", "invoiced", "canceled", "self_invoice_pending"], description: "Receipt status" },
+          date_from: { type: "string", description: "Start date (ISO 8601)" },
+          date_to: { type: "string", description: "End date (ISO 8601)" },
+          limit: { type: "number", description: "Results limit" },
+          page: { type: "number", description: "Page number" },
+        },
+      },
+    },
+    {
+      name: "list_webhooks",
+      description: "List configured webhooks",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "Results limit" },
+          page: { type: "number", description: "Page number" },
+        },
       },
     },
   ],
@@ -227,6 +371,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         return { content: [{ type: "text", text: JSON.stringify({ url: `${BASE_URL}/invoices/${args?.invoiceId}/pdf`, note: "Use this URL with your API key to download the PDF" }, null, 2) }] };
       case "download_invoice_xml":
         return { content: [{ type: "text", text: JSON.stringify({ url: `${BASE_URL}/invoices/${args?.invoiceId}/xml`, note: "Use this URL with your API key to download the XML" }, null, 2) }] };
+      case "send_invoice_email": {
+        const body: any = {};
+        if (args?.email !== undefined) body.email = args.email;
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("POST", `/invoices/${args?.invoiceId}/email`, body), null, 2) }] };
+      }
       case "create_customer":
         return { content: [{ type: "text", text: JSON.stringify(await facturRequest("POST", "/customers", {
           legal_name: args?.legal_name,
@@ -237,12 +386,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         }), null, 2) }] };
       case "get_customer":
         return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/customers/${args?.customerId}`), null, 2) }] };
-      case "list_products": {
+      case "list_customers": {
         const params = new URLSearchParams();
+        if (args?.q) params.set("q", String(args.q));
         if (args?.limit) params.set("limit", String(args.limit));
         if (args?.page) params.set("page", String(args.page));
-        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/products?${params}`), null, 2) }] };
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/customers?${params}`), null, 2) }] };
       }
+      case "update_customer": {
+        const body: any = {};
+        if (args?.legal_name !== undefined) body.legal_name = args.legal_name;
+        if (args?.tax_id !== undefined) body.tax_id = args.tax_id;
+        if (args?.tax_system !== undefined) body.tax_system = args.tax_system;
+        if (args?.email !== undefined) body.email = args.email;
+        if (args?.zip !== undefined) body.address = { zip: args.zip };
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("PUT", `/customers/${args?.customerId}`, body), null, 2) }] };
+      }
+      case "delete_customer":
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("DELETE", `/customers/${args?.customerId}`), null, 2) }] };
       case "create_product":
         return { content: [{ type: "text", text: JSON.stringify(await facturRequest("POST", "/products", {
           description: args?.description,
@@ -252,6 +413,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
           unit_key: args?.unit_key,
           unit_name: args?.unit_name,
         }), null, 2) }] };
+      case "get_product":
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/products/${args?.productId}`), null, 2) }] };
+      case "list_products": {
+        const params = new URLSearchParams();
+        if (args?.q) params.set("q", String(args.q));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.page) params.set("page", String(args.page));
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/products?${params}`), null, 2) }] };
+      }
+      case "update_product": {
+        const body: any = {};
+        if (args?.description !== undefined) body.description = args.description;
+        if (args?.product_key !== undefined) body.product_key = args.product_key;
+        if (args?.price !== undefined) body.price = args.price;
+        if (args?.tax_included !== undefined) body.tax_included = args.tax_included;
+        if (args?.unit_key !== undefined) body.unit_key = args.unit_key;
+        if (args?.unit_name !== undefined) body.unit_name = args.unit_name;
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("PUT", `/products/${args?.productId}`, body), null, 2) }] };
+      }
+      case "delete_product":
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("DELETE", `/products/${args?.productId}`), null, 2) }] };
+      case "create_receipt":
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("POST", "/receipts", {
+          items: args?.items,
+          payment_form: args?.payment_form,
+          folio_number: args?.folio_number,
+          series: args?.series,
+        }), null, 2) }] };
+      case "list_receipts": {
+        const params = new URLSearchParams();
+        if (args?.status) params.set("status", String(args.status));
+        if (args?.date_from) params.set("date[gte]", String(args.date_from));
+        if (args?.date_to) params.set("date[lte]", String(args.date_to));
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.page) params.set("page", String(args.page));
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/receipts?${params}`), null, 2) }] };
+      }
+      case "list_webhooks": {
+        const params = new URLSearchParams();
+        if (args?.limit) params.set("limit", String(args.limit));
+        if (args?.page) params.set("page", String(args.page));
+        return { content: [{ type: "text", text: JSON.stringify(await facturRequest("GET", `/webhooks?${params}`), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -274,7 +478,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-facturapi", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-facturapi", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
