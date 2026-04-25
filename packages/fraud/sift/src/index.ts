@@ -16,17 +16,27 @@
  *   Sift      — global, multi-abuse-type ML, decisions workflows, enterprise
  *   Jumio     — global KYC (distinct from fraud — identity verification, not scoring)
  *
- * Tools (10):
- *   send_event               — POST any $-prefixed event ($create_order, $login, $chargeback, ...)
- *   get_user_score           — fetch latest score(s) for a user (no recompute)
- *   rescore_user             — force a recompute and return the fresh score
- *   label_user               — mark a user as fraud / not-fraud (Labels API — legacy ML feedback)
- *   unlabel_user             — remove an existing label
- *   apply_decision_to_user   — apply a workflow decision to a user
- *   apply_decision_to_order  — apply a workflow decision to a specific order
- *   get_user_decisions       — list decisions currently applied to a user
- *   get_order_decisions      — list decisions currently applied to an order
- *   get_workflow_run         — fetch the status of a workflow run by run_id
+ * Tools (20):
+ *   send_event                  — POST any $-prefixed event ($create_order, $login, $chargeback, ...)
+ *   send_chargeback             — convenience wrapper for $chargeback events
+ *   send_login                  — convenience wrapper for $login events
+ *   send_logout                 — convenience wrapper for $logout events
+ *   send_content_status         — convenience wrapper for $content_status events
+ *   link_session_to_user        — convenience wrapper for $link_session_to_user events
+ *   get_user_score              — fetch latest score(s) for a user (no recompute)
+ *   rescore_user                — force a recompute and return the fresh score
+ *   label_user                  — mark a user as fraud / not-fraud (Labels API — legacy ML feedback)
+ *   unlabel_user                — remove an existing label
+ *   apply_decision_to_user      — apply a workflow decision to a user
+ *   apply_decision_to_order     — apply a workflow decision to a specific order
+ *   apply_decision_to_session   — apply a workflow decision to a session
+ *   apply_decision_to_content   — apply a workflow decision to content
+ *   get_user_decisions          — list decisions currently applied to a user
+ *   get_order_decisions         — list decisions currently applied to an order
+ *   get_session_decisions       — list decisions currently applied to a session
+ *   get_content_decisions       — list decisions currently applied to a content item
+ *   get_workflow_run            — fetch the status of a workflow run by run_id
+ *   send_custom_event           — POST a custom (non-$ prefixed) event type
  *
  * Authentication
  *   Events API (v205)    — $api_key field inside the JSON body
@@ -138,7 +148,7 @@ const ABUSE_TYPES = [
 ];
 
 const server = new Server(
-  { name: "mcp-sift", version: "0.1.0-alpha.1" },
+  { name: "mcp-sift", version: "0.2.0-alpha.1" },
   { capabilities: { tools: {} } }
 );
 
@@ -318,6 +328,186 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["run_id"],
       },
     },
+    {
+      name: "send_chargeback",
+      description: "Send a $chargeback event to Sift's Events API (POST /v205/events). Convenience wrapper around send_event for the most common ML-feedback signal: a confirmed chargeback. Sift uses chargeback events as a strong negative-label signal for the payment_abuse model. Optionally request a synchronous score with return_score=true.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id of the user who initiated the chargebacked transaction." },
+          order_id: { type: "string", description: "Sift $order_id of the chargebacked order." },
+          transaction_id: { type: "string", description: "Sift $transaction_id of the chargebacked transaction (when more granular than order)." },
+          chargeback_state: {
+            type: "string",
+            enum: ["$received", "$accepted", "$disputed", "$won", "$lost"],
+            description: "Lifecycle state of the chargeback per Sift's reserved values.",
+          },
+          chargeback_reason: {
+            type: "string",
+            description: "Sift reserved chargeback reason ($fraud, $duplicate, $product_not_received, $product_unacceptable, $other, ...).",
+          },
+          fields: {
+            type: "object",
+            description: "Optional additional fields merged into the event payload.",
+          },
+          return_score: { type: "boolean", description: "If true, returns a fresh score in the response." },
+        },
+        required: ["user_id", "order_id"],
+      },
+    },
+    {
+      name: "send_login",
+      description: "Send a $login event to Sift's Events API (POST /v205/events). Convenience wrapper for tracking login attempts — both successful and failed attempts feed Sift's account_abuse model.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id attempting to log in." },
+          session_id: { type: "string", description: "Sift $session_id for the login attempt." },
+          login_status: {
+            type: "string",
+            enum: ["$success", "$failure"],
+            description: "Outcome of the login attempt.",
+          },
+          failure_reason: {
+            type: "string",
+            description: "Reserved Sift reason if login_status=$failure ($account_unknown, $account_suspended, $account_disabled, $wrong_password).",
+          },
+          ip: { type: "string", description: "Originating IP address ($ip)." },
+          fields: { type: "object", description: "Additional event fields (e.g. $browser, $app, custom)." },
+          return_score: { type: "boolean", description: "If true, returns a fresh score in the response." },
+        },
+        required: ["user_id", "login_status"],
+      },
+    },
+    {
+      name: "send_logout",
+      description: "Send a $logout event to Sift's Events API (POST /v205/events). Convenience wrapper for tracking session terminations.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id logging out." },
+          session_id: { type: "string", description: "Sift $session_id being terminated." },
+          fields: { type: "object", description: "Additional event fields." },
+        },
+        required: ["user_id"],
+      },
+    },
+    {
+      name: "send_content_status",
+      description: "Send a $content_status event to Sift's Events API (POST /v205/events). Used to update the moderation status of user-generated content (listings, posts, messages, profiles) — feeds Sift's content_abuse model.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id who owns the content." },
+          content_id: { type: "string", description: "Sift $content_id being updated." },
+          status: {
+            type: "string",
+            enum: ["$draft", "$pending", "$active", "$paused", "$deleted_by_user", "$deleted_by_company"],
+            description: "Reserved Sift content status.",
+          },
+          reason: {
+            type: "string",
+            description: "Sift reserved moderation reason if applicable ($abuse, $spam, $duplicate, $deceptive, ...).",
+          },
+          fields: { type: "object", description: "Additional event fields." },
+        },
+        required: ["user_id", "content_id", "status"],
+      },
+    },
+    {
+      name: "link_session_to_user",
+      description: "Send a $link_session_to_user event to Sift's Events API (POST /v205/events). Use when a user signs in or up after pre-login activity — links the anonymous session's signals back to the now-known user, retroactively scoring earlier events.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id now associated with the session." },
+          session_id: { type: "string", description: "Sift $session_id to link." },
+          fields: { type: "object", description: "Additional event fields." },
+        },
+        required: ["user_id", "session_id"],
+      },
+    },
+    {
+      name: "send_custom_event",
+      description: "Send a custom (merchant-defined) event to Sift's Events API (POST /v205/events). Use for events not covered by Sift's reserved $-prefixed catalog. Custom event names should NOT start with '$' — Sift treats anything without the $ prefix as merchant-defined. Useful for domain-specific signals (e.g. 'kyc_check_passed', 'phone_verified').",
+      inputSchema: {
+        type: "object",
+        properties: {
+          type: { type: "string", description: "Custom event type (no $ prefix). E.g. 'kyc_check_passed', 'phone_verified', 'manual_review_completed'." },
+          user_id: { type: "string", description: "Sift $user_id the event applies to." },
+          fields: { type: "object", description: "Event payload fields. Reserved Sift fields ($session_id, $ip, ...) keep their $ prefix; custom fields do not." },
+          return_score: { type: "boolean", description: "If true, returns a synchronous score." },
+          return_workflow_status: { type: "boolean", description: "If true, returns workflow run status." },
+        },
+        required: ["type", "user_id"],
+      },
+    },
+    {
+      name: "apply_decision_to_session",
+      description: "Apply a workflow Decision to a session (POST /v3/accounts/{account_id}/users/{user_id}/sessions/{session_id}/decisions). Session-level decisions target a specific authenticated session — typical for account_abuse abuse type (e.g. force-logout a session that was hijacked). Requires SIFT_ACCOUNT_ID.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id the session belongs to." },
+          session_id: { type: "string", description: "Sift $session_id." },
+          decision_id: { type: "string", description: "Decision ID as configured in the Sift console." },
+          source: {
+            type: "string",
+            enum: ["MANUAL_REVIEW", "AUTOMATED_RULE", "CHARGEBACK"],
+            description: "Decision source.",
+          },
+          analyst: { type: "string", description: "Analyst id for MANUAL_REVIEW." },
+          description: { type: "string", description: "Rationale." },
+          time: { type: "number", description: "Milliseconds since epoch." },
+        },
+        required: ["user_id", "session_id", "decision_id", "source"],
+      },
+    },
+    {
+      name: "apply_decision_to_content",
+      description: "Apply a workflow Decision to a content item (POST /v3/accounts/{account_id}/users/{user_id}/content/{content_id}/decisions). Content-level decisions target one piece of user-generated content — typical for content_abuse abuse type (e.g. take-down a listing flagged as scam). Requires SIFT_ACCOUNT_ID.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id who owns the content." },
+          content_id: { type: "string", description: "Sift $content_id." },
+          decision_id: { type: "string", description: "Decision ID as configured in the Sift console." },
+          source: {
+            type: "string",
+            enum: ["MANUAL_REVIEW", "AUTOMATED_RULE", "CHARGEBACK"],
+            description: "Decision source.",
+          },
+          analyst: { type: "string", description: "Analyst id for MANUAL_REVIEW." },
+          description: { type: "string", description: "Rationale." },
+          time: { type: "number", description: "Milliseconds since epoch." },
+        },
+        required: ["user_id", "content_id", "decision_id", "source"],
+      },
+    },
+    {
+      name: "get_session_decisions",
+      description: "Fetch the decisions currently applied to a session (GET /v3/accounts/{account_id}/users/{user_id}/sessions/{session_id}/decisions). Requires SIFT_ACCOUNT_ID.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id the session belongs to." },
+          session_id: { type: "string", description: "Sift $session_id." },
+        },
+        required: ["user_id", "session_id"],
+      },
+    },
+    {
+      name: "get_content_decisions",
+      description: "Fetch the decisions currently applied to a content item (GET /v3/accounts/{account_id}/users/{user_id}/content/{content_id}/decisions). Requires SIFT_ACCOUNT_ID.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "Sift $user_id who owns the content." },
+          content_id: { type: "string", description: "Sift $content_id." },
+        },
+        required: ["user_id", "content_id"],
+      },
+    },
   ],
 }));
 
@@ -457,6 +647,188 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: JSON.stringify(await siftRequest("GET", `/v3/accounts/${aid}/workflows/runs/${rid}`), null, 2) }],
         };
       }
+      case "send_chargeback": {
+        const a = args as {
+          user_id: string;
+          order_id: string;
+          transaction_id?: string;
+          chargeback_state?: string;
+          chargeback_reason?: string;
+          fields?: Record<string, unknown>;
+          return_score?: boolean;
+        };
+        const body: Record<string, unknown> = {
+          ...(a.fields || {}),
+          $type: "$chargeback",
+          $user_id: a.user_id,
+          $order_id: a.order_id,
+        };
+        if (a.transaction_id) body["$transaction_id"] = a.transaction_id;
+        if (a.chargeback_state) body["$chargeback_state"] = a.chargeback_state;
+        if (a.chargeback_reason) body["$chargeback_reason"] = a.chargeback_reason;
+        const query: Query = {};
+        if (a.return_score) query["return_score"] = "true";
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", "/v205/events", body, { query, flavor: "events" }), null, 2) }],
+        };
+      }
+      case "send_login": {
+        const a = args as {
+          user_id: string;
+          session_id?: string;
+          login_status: string;
+          failure_reason?: string;
+          ip?: string;
+          fields?: Record<string, unknown>;
+          return_score?: boolean;
+        };
+        const body: Record<string, unknown> = {
+          ...(a.fields || {}),
+          $type: "$login",
+          $user_id: a.user_id,
+          $login_status: a.login_status,
+        };
+        if (a.session_id) body["$session_id"] = a.session_id;
+        if (a.failure_reason) body["$failure_reason"] = a.failure_reason;
+        if (a.ip) body["$ip"] = a.ip;
+        const query: Query = {};
+        if (a.return_score) query["return_score"] = "true";
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", "/v205/events", body, { query, flavor: "events" }), null, 2) }],
+        };
+      }
+      case "send_logout": {
+        const a = args as {
+          user_id: string;
+          session_id?: string;
+          fields?: Record<string, unknown>;
+        };
+        const body: Record<string, unknown> = {
+          ...(a.fields || {}),
+          $type: "$logout",
+          $user_id: a.user_id,
+        };
+        if (a.session_id) body["$session_id"] = a.session_id;
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", "/v205/events", body, { flavor: "events" }), null, 2) }],
+        };
+      }
+      case "send_content_status": {
+        const a = args as {
+          user_id: string;
+          content_id: string;
+          status: string;
+          reason?: string;
+          fields?: Record<string, unknown>;
+        };
+        const body: Record<string, unknown> = {
+          ...(a.fields || {}),
+          $type: "$content_status",
+          $user_id: a.user_id,
+          $content_id: a.content_id,
+          $status: a.status,
+        };
+        if (a.reason) body["$reason"] = a.reason;
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", "/v205/events", body, { flavor: "events" }), null, 2) }],
+        };
+      }
+      case "link_session_to_user": {
+        const a = args as {
+          user_id: string;
+          session_id: string;
+          fields?: Record<string, unknown>;
+        };
+        const body: Record<string, unknown> = {
+          ...(a.fields || {}),
+          $type: "$link_session_to_user",
+          $user_id: a.user_id,
+          $session_id: a.session_id,
+        };
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", "/v205/events", body, { flavor: "events" }), null, 2) }],
+        };
+      }
+      case "send_custom_event": {
+        const a = args as {
+          type: string;
+          user_id: string;
+          fields?: Record<string, unknown>;
+          return_score?: boolean;
+          return_workflow_status?: boolean;
+        };
+        const body: Record<string, unknown> = {
+          ...(a.fields || {}),
+          $type: a.type,
+          $user_id: a.user_id,
+        };
+        const query: Query = {};
+        if (a.return_score) query["return_score"] = "true";
+        if (a.return_workflow_status) query["return_workflow_status"] = "true";
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", "/v205/events", body, { query, flavor: "events" }), null, 2) }],
+        };
+      }
+      case "apply_decision_to_session": {
+        const a = args as {
+          user_id: string;
+          session_id: string;
+          decision_id: string;
+          source: string;
+          analyst?: string;
+          description?: string;
+          time?: number;
+        };
+        const aid = encodeURIComponent(requireAccountId());
+        const uid = encodeURIComponent(a.user_id);
+        const sid = encodeURIComponent(a.session_id);
+        const body: Record<string, unknown> = { decision_id: a.decision_id, source: a.source };
+        if (a.analyst) body["analyst"] = a.analyst;
+        if (a.description) body["description"] = a.description;
+        if (a.time) body["time"] = a.time;
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", `/v3/accounts/${aid}/users/${uid}/sessions/${sid}/decisions`, body), null, 2) }],
+        };
+      }
+      case "apply_decision_to_content": {
+        const a = args as {
+          user_id: string;
+          content_id: string;
+          decision_id: string;
+          source: string;
+          analyst?: string;
+          description?: string;
+          time?: number;
+        };
+        const aid = encodeURIComponent(requireAccountId());
+        const uid = encodeURIComponent(a.user_id);
+        const cid = encodeURIComponent(a.content_id);
+        const body: Record<string, unknown> = { decision_id: a.decision_id, source: a.source };
+        if (a.analyst) body["analyst"] = a.analyst;
+        if (a.description) body["description"] = a.description;
+        if (a.time) body["time"] = a.time;
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("POST", `/v3/accounts/${aid}/users/${uid}/content/${cid}/decisions`, body), null, 2) }],
+        };
+      }
+      case "get_session_decisions": {
+        const a = args as { user_id: string; session_id: string };
+        const aid = encodeURIComponent(requireAccountId());
+        const uid = encodeURIComponent(a.user_id);
+        const sid = encodeURIComponent(a.session_id);
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("GET", `/v3/accounts/${aid}/users/${uid}/sessions/${sid}/decisions`), null, 2) }],
+        };
+      }
+      case "get_content_decisions": {
+        const a = args as { user_id: string; content_id: string };
+        const aid = encodeURIComponent(requireAccountId());
+        const uid = encodeURIComponent(a.user_id);
+        const cid = encodeURIComponent(a.content_id);
+        return {
+          content: [{ type: "text", text: JSON.stringify(await siftRequest("GET", `/v3/accounts/${aid}/users/${uid}/content/${cid}/decisions`), null, 2) }],
+        };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -479,7 +851,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-sift", version: "0.1.0-alpha.1" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-sift", version: "0.2.0-alpha.1" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);

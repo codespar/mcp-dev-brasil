@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp-sift",
-  "version": "0.1.0-alpha.1",
+  "version": "0.2.0-alpha.1",
   "description": "MCP server for Sift — global enterprise ML-based fraud detection, real-time risk scoring (payment/account/content abuse), decisions workflows, and event ingestion",
   "type": "module",
   "main": "./dist/index.js",
