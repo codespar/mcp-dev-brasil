@@ -13,7 +13,7 @@
  * (Konduto, Legiti, Sift, Cybersource) will follow the same shape:
  *   analyze order → get decision → post-decision feedback.
  *
- * Tools (8):
+ * Tools (18):
  *   send_order_for_analysis          — submit an order for risk analysis
  *   get_order_analysis               — retrieve the current decision state
  *   update_order_status              — feed the merchant's final decision back
@@ -22,6 +22,16 @@
  *   get_order_score                  — fraud score only (0-100)
  *   create_device_fingerprint_session— start a device fingerprint session
  *   get_device_fingerprint           — retrieve captured device characteristics
+ *   resolve_manual_review            — manually approve or decline an EM_ANALISE order
+ *   get_score_by_document            — look up risk score for a CPF/CNPJ
+ *   get_score_by_contact             — look up risk score for an email or phone
+ *   validate_document                — KYC: validate CPF/CNPJ (status + holder data)
+ *   validate_address                 — KYC: validate a Brazilian postal address
+ *   track_behavior_event             — log a behavior signal (page view, login, custom)
+ *   issue_challenge                  — issue an OTP/KBA challenge to a buyer
+ *   validate_challenge_response      — verify a challenge response
+ *   create_case                      — open a fraud investigation case
+ *   update_case                      — update a case (status, notes, assignee)
  *
  * Authentication
  *   Bearer token. ClearSale's developer portal recommends a server-side
@@ -69,7 +79,7 @@ async function clearsaleRequest(method: string, path: string, body?: unknown): P
 }
 
 const server = new Server(
-  { name: "mcp-clearsale", version: "0.1.0" },
+  { name: "mcp-clearsale", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -198,6 +208,148 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["session_id"],
       },
     },
+    {
+      name: "resolve_manual_review",
+      description: "Manually resolve an order currently in EM_ANALISE by approving or declining it. Use when an analyst overrides ClearSale's pending decision. The decision is fed back into the model.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Merchant-side order id of the order in EM_ANALISE" },
+          decision: { type: "string", enum: ["APROVADO", "REPROVADO"], description: "Analyst's manual decision" },
+          analyst: { type: "string", description: "Analyst username or id who made the decision (recommended for audit)" },
+          reason: { type: "string", description: "Free-text rationale for the manual decision" },
+        },
+        required: ["id", "decision"],
+      },
+    },
+    {
+      name: "get_score_by_document",
+      description: "Look up the risk score and historical signals associated with a Brazilian document (CPF or CNPJ). Use for pre-checkout screening or onboarding.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          document: { type: "string", description: "CPF (11 digits) or CNPJ (14 digits). Punctuation is stripped server-side." },
+          document_type: { type: "string", enum: ["CPF", "CNPJ"], description: "Document type. If omitted, inferred from length." },
+        },
+        required: ["document"],
+      },
+    },
+    {
+      name: "get_score_by_contact",
+      description: "Look up the risk score for a contact identifier (email or phone). Use for account-takeover screening at login or password reset.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          email: { type: "string", description: "Email address to score. One of email or phone is required." },
+          phone: { type: "string", description: "Phone number in E.164 (e.g. +5511999998888). One of email or phone is required." },
+        },
+      },
+    },
+    {
+      name: "validate_document",
+      description: "KYC: validate a CPF or CNPJ against Receita Federal. Returns registration status (REGULAR / SUSPENSA / CANCELADA / NULA / PENDENTE) and, when authorized, holder name and birth date.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          document: { type: "string", description: "CPF (11 digits) or CNPJ (14 digits). Punctuation is stripped server-side." },
+          document_type: { type: "string", enum: ["CPF", "CNPJ"], description: "Document type. If omitted, inferred from length." },
+          birth_date: { type: "string", description: "Holder's birth date (YYYY-MM-DD). Required by Receita for CPF cross-checks." },
+        },
+        required: ["document"],
+      },
+    },
+    {
+      name: "validate_address",
+      description: "KYC: validate a Brazilian postal address against the Correios database. Confirms zip_code → street/neighborhood/city/state and flags mismatches.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          zip_code: { type: "string", description: "CEP (8 digits). Punctuation is stripped server-side." },
+          street: { type: "string", description: "Street / logradouro to cross-check against the CEP" },
+          number: { type: "string", description: "Street number" },
+          complement: { type: "string", description: "Apartment / unit / complement" },
+          neighborhood: { type: "string", description: "Bairro" },
+          city: { type: "string", description: "City" },
+          state: { type: "string", description: "State (UF, 2-letter code)" },
+        },
+        required: ["zip_code"],
+      },
+    },
+    {
+      name: "track_behavior_event",
+      description: "Log a behavior signal (page view, login, signup, custom event) tied to a fingerprint session. Behavior data sharpens decisions on subsequent send_order_for_analysis calls.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          session_id: { type: "string", description: "Fingerprint session_id to attach the event to" },
+          event_type: { type: "string", enum: ["page_view", "login", "signup", "logout", "add_to_cart", "checkout", "custom"], description: "Type of behavior event" },
+          event_name: { type: "string", description: "Free-form event name (required when event_type=custom)" },
+          user_id: { type: "string", description: "Authenticated user id, if known at event time" },
+          url: { type: "string", description: "Page URL for page_view events" },
+          timestamp: { type: "string", description: "Event timestamp in ISO-8601. Defaults to server receive time." },
+          properties: { type: "object", description: "Arbitrary key/value properties attached to the event" },
+        },
+        required: ["session_id", "event_type"],
+      },
+    },
+    {
+      name: "issue_challenge",
+      description: "Issue an authentication challenge (OTP via SMS/email or KBA question) to a buyer. Use as a step-up after EM_ANALISE or for high-risk flows.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "Order id the challenge is associated with (optional but recommended)" },
+          channel: { type: "string", enum: ["sms", "email", "whatsapp", "kba"], description: "Delivery channel for the challenge" },
+          destination: { type: "string", description: "Phone (E.164) or email — required for sms/email/whatsapp" },
+          locale: { type: "string", description: "BCP-47 locale for the challenge copy (default pt-BR)" },
+        },
+        required: ["channel"],
+      },
+    },
+    {
+      name: "validate_challenge_response",
+      description: "Verify a buyer's response to a challenge issued via issue_challenge. Returns whether the response is valid and how many attempts remain.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          challenge_id: { type: "string", description: "challenge_id returned by issue_challenge" },
+          response: { type: "string", description: "OTP code or KBA answer submitted by the buyer" },
+        },
+        required: ["challenge_id", "response"],
+      },
+    },
+    {
+      name: "create_case",
+      description: "Open a fraud investigation case (e.g. for a suspicious cluster of orders or a confirmed fraud ring). Cases group orders, evidence, and analyst notes.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short case title" },
+          description: { type: "string", description: "Detailed description of the suspected fraud pattern" },
+          priority: { type: "string", enum: ["low", "medium", "high", "critical"], description: "Case priority" },
+          order_ids: { type: "array", items: { type: "string" }, description: "Order ids to attach to the case" },
+          assignee: { type: "string", description: "Analyst username or id to assign the case to" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags for filtering (e.g. ring, takeover, friendly_fraud)" },
+        },
+        required: ["title"],
+      },
+    },
+    {
+      name: "update_case",
+      description: "Update an existing fraud investigation case — change status, add notes, reassign, or attach more orders.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          case_id: { type: "string", description: "Case id returned by create_case" },
+          status: { type: "string", enum: ["open", "investigating", "confirmed_fraud", "false_positive", "closed"], description: "New case status" },
+          assignee: { type: "string", description: "Reassign the case to this analyst" },
+          note: { type: "string", description: "Append a free-text note to the case timeline" },
+          add_order_ids: { type: "array", items: { type: "string" }, description: "Order ids to attach to the case" },
+          tags: { type: "array", items: { type: "string" }, description: "Replace the case's tag list" },
+        },
+        required: ["case_id"],
+      },
+    },
   ],
 }));
 
@@ -247,6 +399,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const sid = encodeURIComponent(String((args as { session_id: string }).session_id));
         return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("GET", `/fingerprint/sessions/${sid}`), null, 2) }] };
       }
+      case "resolve_manual_review": {
+        const a = args as { id: string; decision: string; analyst?: string; reason?: string };
+        const id = encodeURIComponent(String(a.id));
+        const body: Record<string, unknown> = { decision: a.decision };
+        if (a.analyst) body.analyst = a.analyst;
+        if (a.reason) body.reason = a.reason;
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", `/orders/${id}/manual-review`, body), null, 2) }] };
+      }
+      case "get_score_by_document": {
+        const a = args as { document: string; document_type?: string };
+        const params = new URLSearchParams();
+        params.set("document", String(a.document));
+        if (a.document_type) params.set("document_type", String(a.document_type));
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("GET", `/score/document?${params.toString()}`), null, 2) }] };
+      }
+      case "get_score_by_contact": {
+        const a = (args ?? {}) as { email?: string; phone?: string };
+        const params = new URLSearchParams();
+        if (a.email) params.set("email", String(a.email));
+        if (a.phone) params.set("phone", String(a.phone));
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("GET", `/score/contact?${params.toString()}`), null, 2) }] };
+      }
+      case "validate_document":
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", "/kyc/document", args), null, 2) }] };
+      case "validate_address":
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", "/kyc/address", args), null, 2) }] };
+      case "track_behavior_event":
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", "/behavior/events", args), null, 2) }] };
+      case "issue_challenge":
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", "/challenges", args), null, 2) }] };
+      case "validate_challenge_response": {
+        const a = args as { challenge_id: string; response: string };
+        const cid = encodeURIComponent(String(a.challenge_id));
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", `/challenges/${cid}/validate`, { response: a.response }), null, 2) }] };
+      }
+      case "create_case":
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("POST", "/cases", args), null, 2) }] };
+      case "update_case": {
+        const a = args as { case_id: string; [k: string]: unknown };
+        const cid = encodeURIComponent(String(a.case_id));
+        const { case_id: _omit, ...body } = a;
+        return { content: [{ type: "text", text: JSON.stringify(await clearsaleRequest("PATCH", `/cases/${cid}`, body), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -269,7 +464,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-clearsale", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-clearsale", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);

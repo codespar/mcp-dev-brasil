@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp-clearsale",
-  "version": "0.1.0-alpha.1",
+  "version": "0.2.0-alpha.1",
   "description": "MCP server for ClearSale — Brazilian fraud prevention, order risk scoring, device fingerprinting, and chargeback feedback",
   "type": "module",
   "main": "./dist/index.js",
