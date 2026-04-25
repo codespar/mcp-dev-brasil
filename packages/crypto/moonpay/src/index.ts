@@ -10,7 +10,7 @@
  * option for agents paying out in crypto or end users buying crypto with
  * local currency.
  *
- * Tools (10):
+ * Tools (20):
  *   get_buy_quote            — preview a fiat -> crypto exchange before committing
  *   create_buy_transaction   — create a buy transaction (fiat -> crypto)
  *   get_buy_transaction      — retrieve a buy transaction by id
@@ -18,18 +18,35 @@
  *   get_sell_quote           — preview a crypto -> fiat exchange
  *   create_sell_transaction  — create a sell transaction (crypto -> fiat)
  *   get_sell_transaction     — retrieve a sell transaction by id
+ *   refund_sell_transaction  — request a refund on an off-ramp transaction
  *   create_customer          — create a KYC'd end user
  *   get_customer             — retrieve a customer by id
+ *   get_customer_kyc_status  — fetch KYC verification status for a customer
+ *   list_customer_transactions — list all (buy + sell) transactions tied to a customer
+ *   get_transaction_receipt  — fetch a tax-/audit-grade receipt for a completed transaction
  *   list_currencies          — list supported fiat + crypto assets (dynamic discovery)
+ *   get_currency             — retrieve metadata for a single currency by code
+ *   list_countries           — list supported countries with allowed flows (buy/sell) per geography
+ *   list_payment_methods     — list payment methods supported for a fiat / country pair
+ *   get_user_country         — IP-based geolocation + alpha-3 country code (compliance helper)
+ *   sign_buy_url             — HMAC-sign a hosted-checkout buy widget URL with apiKey + params
+ *   sign_sell_url            — HMAC-sign a hosted-checkout sell widget URL with apiKey + params
  *
  * Authentication
- *   Every request carries:
+ *   REST API requests carry:
  *     Authorization: Api-Key <API_KEY>
  *   Sandbox vs production is selected by which key you pass; the base URL is the same.
  *
+ *   Hosted widget URLs (buy.moonpay.com / sell.moonpay.com) are HMAC-SHA256
+ *   signed using the publishable key + secret key (see sign_buy_url / sign_sell_url).
+ *
  * Environment
- *   MOONPAY_API_KEY   — API key (required, secret)
- *   MOONPAY_BASE_URL  — optional; defaults to https://api.moonpay.com
+ *   MOONPAY_API_KEY        — REST API key (required, secret)
+ *   MOONPAY_PUBLISHABLE_KEY — publishable key for widget URLs (optional, used by sign_*_url)
+ *   MOONPAY_SECRET_KEY     — secret key for HMAC signing widget URLs (optional, used by sign_*_url)
+ *   MOONPAY_BASE_URL       — optional; defaults to https://api.moonpay.com
+ *   MOONPAY_BUY_WIDGET_URL — optional; defaults to https://buy.moonpay.com
+ *   MOONPAY_SELL_WIDGET_URL — optional; defaults to https://sell.moonpay.com
  *
  * Docs: https://dev.moonpay.com
  */
@@ -42,9 +59,14 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { createHmac } from "node:crypto";
 
 const API_KEY = process.env.MOONPAY_API_KEY || "";
+const PUBLISHABLE_KEY = process.env.MOONPAY_PUBLISHABLE_KEY || "";
+const SECRET_KEY = process.env.MOONPAY_SECRET_KEY || "";
 const BASE_URL = process.env.MOONPAY_BASE_URL || "https://api.moonpay.com";
+const BUY_WIDGET_URL = process.env.MOONPAY_BUY_WIDGET_URL || "https://buy.moonpay.com";
+const SELL_WIDGET_URL = process.env.MOONPAY_SELL_WIDGET_URL || "https://sell.moonpay.com";
 
 async function moonpayRequest(method: string, path: string, body?: unknown): Promise<unknown> {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -77,8 +99,34 @@ function qs(params: Record<string, unknown>): string {
   return `?${search.toString()}`;
 }
 
+/**
+ * HMAC-SHA256 sign a MoonPay widget URL.
+ *
+ * MoonPay's hosted widget (buy.moonpay.com / sell.moonpay.com) requires that
+ * the query string be signed with the merchant's secret key. The signature is
+ * computed over the URL's query portion (including the leading `?`) and
+ * appended as `&signature=<base64>`.
+ *
+ * Requires MOONPAY_PUBLISHABLE_KEY (added as `apiKey` param) and
+ * MOONPAY_SECRET_KEY (used as the HMAC key) to be set.
+ */
+function signWidgetUrl(widgetBase: string, params: Record<string, unknown>): string {
+  if (!PUBLISHABLE_KEY) throw new Error("MOONPAY_PUBLISHABLE_KEY is not set; cannot sign widget URL.");
+  if (!SECRET_KEY) throw new Error("MOONPAY_SECRET_KEY is not set; cannot sign widget URL.");
+  const merged: Record<string, unknown> = { apiKey: PUBLISHABLE_KEY, ...params };
+  const entries = Object.entries(merged).filter(([, v]) => v !== undefined && v !== null && v !== "");
+  const search = new URLSearchParams();
+  for (const [k, v] of entries) {
+    if (typeof v === "object") search.set(k, JSON.stringify(v));
+    else search.set(k, String(v));
+  }
+  const query = `?${search.toString()}`;
+  const signature = createHmac("sha256", SECRET_KEY).update(query).digest("base64");
+  return `${widgetBase}${query}&signature=${encodeURIComponent(signature)}`;
+}
+
 const server = new Server(
-  { name: "mcp-moonpay", version: "0.1.0" },
+  { name: "mcp-moonpay", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -192,6 +240,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "refund_sell_transaction",
+      description: "Request a refund on an off-ramp (sell) transaction. Used when the destination bank rejects payout or the user disputes the trade. Reason codes are MoonPay-defined.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "MoonPay sell transaction id to refund" },
+          reason: { type: "string", description: "Reason code or free-text justification for the refund" },
+          amount: { type: "number", description: "Optional partial refund amount (in the transaction's base/crypto currency). Omit for full refund." },
+        },
+        required: ["id"],
+      },
+    },
+    {
       name: "create_customer",
       description: "Create a MoonPay customer (KYC'd end user). Required before creating transactions that must be tied to an identified individual.",
       inputSchema: {
@@ -230,6 +291,42 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_customer_kyc_status",
+      description: "Fetch KYC verification status (and any pending document requirements) for a MoonPay customer. Use to gate flows that require an approved customer before transacting.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "MoonPay customer id" },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "list_customer_transactions",
+      description: "List all transactions (buy + sell) tied to a single MoonPay customer. Convenience wrapper for unified history / reconciliation by user.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          customerId: { type: "string", description: "MoonPay customer id" },
+          status: { type: "string", description: "Optional status filter (e.g. pending, completed, failed)" },
+          limit: { type: "number", description: "Max results to return" },
+        },
+        required: ["customerId"],
+      },
+    },
+    {
+      name: "get_transaction_receipt",
+      description: "Fetch a tax-/audit-grade receipt for a completed buy or sell transaction. Useful for end-user reporting or accounting export.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "MoonPay transaction id (buy or sell)" },
+          type: { type: "string", enum: ["buy", "sell"], description: "Whether the id refers to a buy or sell transaction. Defaults to buy." },
+        },
+        required: ["id"],
+      },
+    },
+    {
       name: "list_currencies",
       description: "List supported currencies (fiat + crypto). Essential for agents: use this to discover currency codes dynamically rather than hard-coding, and to check which assets/fiats are currently enabled.",
       inputSchema: {
@@ -237,6 +334,96 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           show: { type: "string", enum: ["enabled", "all"], description: "Filter to enabled currencies only, or return everything. Defaults to enabled on the API side." },
         },
+      },
+    },
+    {
+      name: "get_currency",
+      description: "Retrieve metadata for a single currency (fiat or crypto) by its MoonPay code. Returns network, decimals, min/max amounts, fee structure.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currencyCode: { type: "string", description: "Currency code (e.g. btc, usdc, brl, usd)" },
+        },
+        required: ["currencyCode"],
+      },
+    },
+    {
+      name: "list_countries",
+      description: "List countries supported by MoonPay along with which flows (buy / sell / NFT) are allowed per geography. Use this to gate UI before initiating a quote.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "list_payment_methods",
+      description: "List payment methods supported for a given fiat currency / country combination (e.g. credit_debit_card, sepa_bank_transfer, pix). Use to populate checkout selectors dynamically.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currencyCode: { type: "string", description: "Fiat currency code (e.g. brl, usd, eur)" },
+          country: { type: "string", description: "ISO-3166 alpha-2 country code (e.g. BR, US, MX)" },
+        },
+      },
+    },
+    {
+      name: "get_user_country",
+      description: "Resolve the caller's (or a given IP's) country via MoonPay's IP-address geolocation endpoint. Returns ISO alpha-2 + alpha-3 country, plus state for US. Compliance helper to gate flows by jurisdiction before quoting or creating a transaction.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          ipAddress: { type: "string", description: "Optional IP to check. If omitted, MoonPay resolves from the request origin." },
+        },
+      },
+    },
+    {
+      name: "sign_buy_url",
+      description: "Build and HMAC-SHA256 sign a MoonPay buy widget URL (buy.moonpay.com). Returns a ready-to-redirect URL with the merchant's apiKey + signature appended. Requires MOONPAY_PUBLISHABLE_KEY and MOONPAY_SECRET_KEY in the environment. Use when embedding the hosted onramp in your own UI.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currencyCode: { type: "string", description: "Crypto currency code to buy (e.g. btc, usdc)" },
+          baseCurrencyCode: { type: "string", description: "Fiat currency code (e.g. usd, brl)" },
+          baseCurrencyAmount: { type: "number", description: "Pre-fill fiat amount" },
+          quoteCurrencyAmount: { type: "number", description: "Pre-fill crypto amount" },
+          walletAddress: { type: "string", description: "Pre-fill destination wallet address" },
+          walletAddressTag: { type: "string", description: "Destination tag / memo for chains that require it" },
+          email: { type: "string", description: "Pre-fill end-user email" },
+          externalCustomerId: { type: "string", description: "Your internal user id, propagated to MoonPay" },
+          externalTransactionId: { type: "string", description: "Your internal transaction reference" },
+          redirectURL: { type: "string", description: "Where to redirect after the hosted flow completes" },
+          paymentMethod: { type: "string", description: "Pre-select payment method (e.g. credit_debit_card, pix)" },
+          theme: { type: "string", description: "Widget theme (light / dark)" },
+          colorCode: { type: "string", description: "Hex accent color for the widget" },
+          language: { type: "string", description: "BCP-47 language tag (e.g. en, pt-BR)" },
+          showWalletAddressForm: { type: "boolean", description: "If true, force the widget to show the wallet form even when prefilled" },
+          extraParams: { type: "object", description: "Additional widget parameters passed through as-is (object values are JSON-stringified)" },
+        },
+        required: ["currencyCode"],
+      },
+    },
+    {
+      name: "sign_sell_url",
+      description: "Build and HMAC-SHA256 sign a MoonPay sell widget URL (sell.moonpay.com). Returns a ready-to-redirect URL with apiKey + signature appended. Requires MOONPAY_PUBLISHABLE_KEY and MOONPAY_SECRET_KEY in the environment.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          baseCurrencyCode: { type: "string", description: "Crypto currency code being sold (e.g. btc, usdc)" },
+          quoteCurrencyCode: { type: "string", description: "Fiat currency to receive (e.g. usd, brl)" },
+          baseCurrencyAmount: { type: "number", description: "Pre-fill crypto amount" },
+          quoteCurrencyAmount: { type: "number", description: "Pre-fill fiat amount" },
+          refundWalletAddress: { type: "string", description: "Wallet to refund crypto to if the sell fails" },
+          email: { type: "string", description: "Pre-fill end-user email" },
+          externalCustomerId: { type: "string", description: "Your internal user id" },
+          externalTransactionId: { type: "string", description: "Your internal transaction reference" },
+          redirectURL: { type: "string", description: "Where to redirect after the hosted flow completes" },
+          payoutMethod: { type: "string", description: "Pre-select payout method (e.g. sepa_bank_transfer, pix)" },
+          theme: { type: "string", description: "Widget theme (light / dark)" },
+          colorCode: { type: "string", description: "Hex accent color for the widget" },
+          language: { type: "string", description: "BCP-47 language tag (e.g. en, pt-BR)" },
+          extraParams: { type: "object", description: "Additional widget parameters passed through as-is (object values are JSON-stringified)" },
+        },
+        required: ["baseCurrencyCode"],
       },
     },
   ],
@@ -286,13 +473,59 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("POST", "/v3/sell_transactions", a), null, 2) }] };
       case "get_sell_transaction":
         return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v3/sell_transactions/${encodeURIComponent(String(a.id ?? ""))}`), null, 2) }] };
+      case "refund_sell_transaction": {
+        const id = encodeURIComponent(String(a.id ?? ""));
+        const body: Record<string, unknown> = {};
+        if (a.reason !== undefined) body.reason = a.reason;
+        if (a.amount !== undefined) body.amount = a.amount;
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("POST", `/v3/sell_transactions/${id}/refund`, body), null, 2) }] };
+      }
       case "create_customer":
         return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("POST", "/v1/customers", a), null, 2) }] };
       case "get_customer":
         return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v1/customers/${encodeURIComponent(String(a.id ?? ""))}`), null, 2) }] };
+      case "get_customer_kyc_status": {
+        const id = encodeURIComponent(String(a.id ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v1/customers/${id}/kyc_status`), null, 2) }] };
+      }
+      case "list_customer_transactions": {
+        const id = encodeURIComponent(String(a.customerId ?? ""));
+        const query = qs({ status: a.status, limit: a.limit });
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v1/customers/${id}/transactions${query}`), null, 2) }] };
+      }
+      case "get_transaction_receipt": {
+        const id = encodeURIComponent(String(a.id ?? ""));
+        const type = String(a.type ?? "buy");
+        const path = type === "sell" ? `/v3/sell_transactions/${id}/receipt` : `/v1/transactions/${id}/receipt`;
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", path), null, 2) }] };
+      }
       case "list_currencies": {
         const query = qs({ show: a.show });
         return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v3/currencies${query}`), null, 2) }] };
+      }
+      case "get_currency": {
+        const code = encodeURIComponent(String(a.currencyCode ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v3/currencies/${code}`), null, 2) }] };
+      }
+      case "list_countries":
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v3/countries`), null, 2) }] };
+      case "list_payment_methods": {
+        const query = qs({ currencyCode: a.currencyCode, country: a.country });
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v3/payment_methods${query}`), null, 2) }] };
+      }
+      case "get_user_country": {
+        const query = qs({ ipAddress: a.ipAddress });
+        return { content: [{ type: "text", text: JSON.stringify(await moonpayRequest("GET", `/v4/ip_address${query}`), null, 2) }] };
+      }
+      case "sign_buy_url": {
+        const { extraParams, ...rest } = a as { extraParams?: Record<string, unknown> } & Record<string, unknown>;
+        const url = signWidgetUrl(BUY_WIDGET_URL, { ...rest, ...(extraParams ?? {}) });
+        return { content: [{ type: "text", text: JSON.stringify({ url }, null, 2) }] };
+      }
+      case "sign_sell_url": {
+        const { extraParams, ...rest } = a as { extraParams?: Record<string, unknown> } & Record<string, unknown>;
+        const url = signWidgetUrl(SELL_WIDGET_URL, { ...rest, ...(extraParams ?? {}) });
+        return { content: [{ type: "text", text: JSON.stringify({ url }, null, 2) }] };
       }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
@@ -316,7 +549,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-moonpay", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-moonpay", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);

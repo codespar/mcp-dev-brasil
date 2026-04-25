@@ -7,26 +7,54 @@
     "source": "github",
     "subfolder": "packages/crypto/moonpay"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@codespar/mcp-moonpay",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
           "name": "MOONPAY_API_KEY",
-          "description": "MoonPay API key (sandbox or production — the key selects the environment)",
+          "description": "MoonPay REST API key (sandbox or production — the key selects the environment)",
           "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "MOONPAY_PUBLISHABLE_KEY",
+          "description": "MoonPay publishable key used as `apiKey` in signed widget URLs (required for sign_buy_url / sign_sell_url).",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MOONPAY_SECRET_KEY",
+          "description": "MoonPay secret key used to HMAC-SHA256 sign widget URLs (required for sign_buy_url / sign_sell_url).",
+          "isRequired": false,
           "format": "string",
           "isSecret": true
         },
         {
           "name": "MOONPAY_BASE_URL",
           "description": "MoonPay API base URL. Defaults to https://api.moonpay.com.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MOONPAY_BUY_WIDGET_URL",
+          "description": "MoonPay buy widget base URL. Defaults to https://buy.moonpay.com.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MOONPAY_SELL_WIDGET_URL",
+          "description": "MoonPay sell widget base URL. Defaults to https://sell.moonpay.com.",
           "isRequired": false,
           "format": "string",
           "isSecret": false
