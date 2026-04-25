@@ -4,21 +4,30 @@
  * MCP Server for BrasilAPI — public Brazilian data APIs.
  *
  * Tools:
- * - get_cep: Look up address by CEP (postal code)
+ * - get_cep: Look up address by CEP (postal code, v2 with multi-provider fallback)
+ * - get_cep_v1: Look up address by CEP (v1, single-provider, faster)
  * - get_cnpj: Look up company by CNPJ
  * - get_banks: List all Brazilian banks
  * - get_holidays: List national holidays for a year
  * - get_fipe_brands: List vehicle brands by type
+ * - get_fipe_vehicles: List vehicle models for a brand+type
+ * - get_fipe_tables: List FIPE reference tables
  * - get_fipe_price: Get FIPE vehicle price by code
  * - get_ddd: Get cities for a DDD (area code)
  * - get_isbn: Look up book by ISBN
  * - get_ncm: Look up NCM code (tax classification)
  * - get_cptec_weather: Get weather forecast for a city
+ * - get_cptec_cities: Search CPTEC cities by name
+ * - get_cptec_airport_weather: Get METAR airport weather by ICAO code
+ * - get_cptec_capitals_weather: Get current weather for all Brazilian capitals
+ * - get_cptec_ocean_forecast: Get ocean/wave forecast for a coastal city
  * - get_pix_participants: List Pix participant institutions (PSPs)
  * - get_domain_info: Look up domain registration info (.br)
  * - get_ibge_municipalities: List municipalities for a state (IBGE)
+ * - get_ibge_states: List all Brazilian states/UFs (IBGE)
  * - get_tax_rates: Get current Brazilian tax rates (Selic, CDI, IPCA)
- * - get_cptec_cities: Search CPTEC cities by name
+ * - get_corretoras: List CVM-registered brokerages
+ * - get_corretora: Look up a single CVM brokerage by CNPJ
  *
  * Environment: none (public API, no authentication)
  */
@@ -56,7 +65,7 @@ async function brasilApiRequest(path: string): Promise<unknown> {
 }
 
 const server = new Server(
-  { name: "mcp-brasil-api", version: "0.1.0" },
+  { name: "mcp-brasil-api", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -216,6 +225,83 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["cityName"],
       },
     },
+    {
+      name: "get_cep_v1",
+      description: "Look up address by CEP using BrasilAPI v1 (single-provider, often faster than v2)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cep: { type: "string", description: "CEP (8 digits, e.g. 01001000)" },
+        },
+        required: ["cep"],
+      },
+    },
+    {
+      name: "get_fipe_vehicles",
+      description: "List vehicle models for a given FIPE brand code and vehicle type",
+      inputSchema: {
+        type: "object",
+        properties: {
+          vehicle_type: { type: "string", enum: ["carros", "motos", "caminhoes"], description: "Vehicle type" },
+          brand_code: { type: "string", description: "FIPE brand code (from get_fipe_brands)" },
+        },
+        required: ["vehicle_type", "brand_code"],
+      },
+    },
+    {
+      name: "get_fipe_tables",
+      description: "List FIPE reference tables (months/years available for FIPE queries)",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_cptec_airport_weather",
+      description: "Get current airport weather (METAR) by ICAO code from CPTEC/INPE",
+      inputSchema: {
+        type: "object",
+        properties: {
+          icao: { type: "string", description: "Airport ICAO code (e.g. SBGR for Guarulhos)" },
+        },
+        required: ["icao"],
+      },
+    },
+    {
+      name: "get_cptec_capitals_weather",
+      description: "Get current weather conditions for all Brazilian state capitals",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_cptec_ocean_forecast",
+      description: "Get ocean/wave forecast for a coastal city (CPTEC/INPE)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          city_code: { type: "number", description: "CPTEC city code (use get_cptec_cities to find)" },
+          days: { type: "number", description: "Number of forecast days (1-6, optional)" },
+        },
+        required: ["city_code"],
+      },
+    },
+    {
+      name: "get_ibge_states",
+      description: "List all Brazilian states/UFs with IBGE codes and metadata",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_corretoras",
+      description: "List all CVM-registered Brazilian brokerages (corretoras)",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_corretora",
+      description: "Look up a single CVM-registered brokerage by CNPJ",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cnpj: { type: "string", description: "Brokerage CNPJ (14 digits)" },
+        },
+        required: ["cnpj"],
+      },
+    },
   ],
 }));
 
@@ -224,11 +310,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   // --- Input validation ---
   try {
-    if (name === "get_cep" && args?.cep) {
+    if ((name === "get_cep" || name === "get_cep_v1") && args?.cep) {
       const r = cepSchema.safeParse(args.cep);
       if (!r.success) return validationError(r.error.issues[0].message);
     }
-    if (name === "get_cnpj" && args?.cnpj) {
+    if ((name === "get_cnpj" || name === "get_corretora") && args?.cnpj) {
       const r = cnpjSchema.safeParse(args.cnpj);
       if (!r.success) return validationError(r.error.issues[0].message);
     }
@@ -270,6 +356,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/taxas/v1/${args?.acronym}`), null, 2) }] };
       case "get_cptec_cities":
         return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/cptec/v1/cidade/${encodeURIComponent(String(args?.cityName))}`), null, 2) }] };
+      case "get_cep_v1":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/cep/v1/${args?.cep}`), null, 2) }] };
+      case "get_fipe_vehicles":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/fipe/veiculos/v1/${args?.vehicle_type}/${args?.brand_code}`), null, 2) }] };
+      case "get_fipe_tables":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest("/fipe/tabelas/v1"), null, 2) }] };
+      case "get_cptec_airport_weather":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/cptec/v1/clima/aeroporto/${encodeURIComponent(String(args?.icao))}`), null, 2) }] };
+      case "get_cptec_capitals_weather":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest("/cptec/v1/clima/capital"), null, 2) }] };
+      case "get_cptec_ocean_forecast": {
+        const path = args?.days
+          ? `/cptec/v1/ondas/${args?.city_code}/${args?.days}`
+          : `/cptec/v1/ondas/${args?.city_code}`;
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(path), null, 2) }] };
+      }
+      case "get_ibge_states":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest("/ibge/uf/v1"), null, 2) }] };
+      case "get_corretoras":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest("/cvm/corretoras/v1"), null, 2) }] };
+      case "get_corretora":
+        return { content: [{ type: "text", text: JSON.stringify(await brasilApiRequest(`/cvm/corretoras/v1/${args?.cnpj}`), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -292,7 +400,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-brasil-api", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-brasil-api", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
