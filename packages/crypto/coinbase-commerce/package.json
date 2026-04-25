@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp-coinbase-commerce",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for Coinbase Commerce — global crypto merchant payments. Accept BTC, ETH, USDC and more at checkout with hosted charges, checkouts, and invoices.",
   "type": "module",
   "main": "./dist/index.js",

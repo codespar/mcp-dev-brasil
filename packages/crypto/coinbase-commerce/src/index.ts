@@ -14,27 +14,39 @@
  *   - Coinbase     — merchants ACCEPT crypto from buyers at checkout
  *                    Commerce    (this package)
  *
- * Tools (9):
- *   create_charge      — create a crypto charge (merchant invoice)
- *   retrieve_charge    — look up a charge by id or short code
- *   list_charges       — list charges (paginated)
- *   cancel_charge      — cancel a no-longer-needed charge (before payment)
- *   resolve_charge     — manually mark a charge as paid
- *   create_checkout    — create a reusable hosted checkout (product page)
- *   retrieve_checkout  — look up a checkout by id
- *   list_events        — list webhook-like events (charge:* lifecycle)
- *   create_invoice     — create an invoice for a known recipient
+ * Tools (18):
+ *   create_charge              — create a crypto charge (merchant invoice)
+ *   retrieve_charge            — look up a charge by id or short code
+ *   list_charges               — list charges (paginated)
+ *   cancel_charge              — cancel a no-longer-needed charge (before payment)
+ *   resolve_charge             — manually mark a charge as paid
+ *   create_checkout            — create a reusable hosted checkout (product page)
+ *   retrieve_checkout          — look up a checkout by id
+ *   list_checkouts             — list checkouts (paginated)
+ *   update_checkout            — update an existing checkout's name/description/price/fields
+ *   delete_checkout            — delete a checkout
+ *   list_events                — list webhook-like events (charge:* lifecycle)
+ *   retrieve_event             — retrieve a single event by id (webhook audit)
+ *   create_invoice             — create an invoice for a known recipient
+ *   retrieve_invoice           — retrieve an invoice by code
+ *   list_invoices              — list invoices (paginated)
+ *   void_invoice               — void an unpaid invoice
+ *   list_exchange_rates        — current Coinbase exchange rates (BTC, ETH, USDC, ...)
+ *   verify_webhook_signature   — local HMAC-SHA256 verifier for X-CC-Webhook-Signature
  *
  * Authentication
- *   Every request carries two headers:
+ *   Most requests carry two headers:
  *     X-CC-Api-Key: <COINBASE_COMMERCE_API_KEY>
  *     X-CC-Version: 2018-03-22   (version header is required)
+ *   The exchange-rates endpoint is public and does not require the API key.
+ *   verify_webhook_signature runs locally and uses COINBASE_COMMERCE_WEBHOOK_SECRET.
  *
  * Environment
- *   COINBASE_COMMERCE_API_KEY      — API key (required, secret)
- *   COINBASE_COMMERCE_API_VERSION  — optional; defaults to 2018-03-22
+ *   COINBASE_COMMERCE_API_KEY        — API key (required for merchant tools, secret)
+ *   COINBASE_COMMERCE_API_VERSION    — optional; defaults to 2018-03-22
+ *   COINBASE_COMMERCE_WEBHOOK_SECRET — optional; needed only for verify_webhook_signature
  *
- * Docs: https://docs.cdp.coinbase.com/commerce  (base: https://api.commerce.coinbase.com)
+ * Docs: https://docs.cdp.coinbase.com/commerce-onchain  (base: https://api.commerce.coinbase.com)
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -45,9 +57,11 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 const API_KEY = process.env.COINBASE_COMMERCE_API_KEY || "";
 const API_VERSION = process.env.COINBASE_COMMERCE_API_VERSION || "2018-03-22";
+const WEBHOOK_SECRET = process.env.COINBASE_COMMERCE_WEBHOOK_SECRET || "";
 const BASE_URL = "https://api.commerce.coinbase.com";
 
 async function coinbaseRequest(method: string, path: string, body?: unknown): Promise<unknown> {
@@ -81,8 +95,21 @@ function qs(params: Record<string, unknown>): string {
   return `?${search.toString()}`;
 }
 
+function verifyWebhook(rawBody: string, signature: string, secret: string): boolean {
+  if (!rawBody || !signature || !secret) return false;
+  const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(signature, "utf8");
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
 const server = new Server(
-  { name: "mcp-coinbase-commerce", version: "0.1.0" },
+  { name: "mcp-coinbase-commerce", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -198,6 +225,58 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "list_checkouts",
+      description: "List reusable hosted checkouts, newest first. Cursor pagination via starting_after / ending_before.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "Max results per page (default 25, max 100)" },
+          starting_after: { type: "string", description: "Cursor: return results after this checkout id" },
+          ending_before: { type: "string", description: "Cursor: return results before this checkout id" },
+          order: { type: "string", enum: ["asc", "desc"], description: "Sort order by created_at. Defaults to desc." },
+        },
+      },
+    },
+    {
+      name: "update_checkout",
+      description: "Update an existing reusable checkout. Supply only the fields you want to change (Coinbase replaces the supplied fields). Use to retitle a product, change the price, or adjust which buyer fields are collected.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Checkout id to update" },
+          name: { type: "string", description: "New checkout / product name" },
+          description: { type: "string", description: "New checkout description" },
+          pricing_type: { type: "string", enum: ["fixed_price", "no_price"], description: "Update pricing model" },
+          local_price: {
+            type: "object",
+            description: "New fiat-denominated price",
+            properties: {
+              amount: { type: "string", description: "Amount as decimal string" },
+              currency: { type: "string", description: "ISO-4217 fiat currency code" },
+            },
+            required: ["amount", "currency"],
+          },
+          requested_info: {
+            type: "array",
+            description: "New list of buyer fields to collect",
+            items: { type: "string" },
+          },
+        },
+        required: ["id"],
+      },
+    },
+    {
+      name: "delete_checkout",
+      description: "Delete a reusable checkout. The hosted URL stops accepting new payments. Existing charges spawned by the checkout are unaffected.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Checkout id to delete" },
+        },
+        required: ["id"],
+      },
+    },
+    {
       name: "list_events",
       description: "List events — the lifecycle signals (charge:created, charge:confirmed, charge:failed, charge:delayed, charge:pending, charge:resolved) that Coinbase Commerce also delivers via webhook. Useful for reconciliation and agent polling.",
       inputSchema: {
@@ -208,6 +287,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           ending_before: { type: "string", description: "Cursor: return results before this event id" },
           order: { type: "string", enum: ["asc", "desc"], description: "Sort order by created_at. Defaults to desc." },
         },
+      },
+    },
+    {
+      name: "retrieve_event",
+      description: "Retrieve a single event by id. Useful when auditing a webhook delivery or replaying state — fetch the event Coinbase Commerce recorded server-side and compare against what your endpoint received.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Event id (the id field on a webhook payload)" },
+        },
+        required: ["id"],
       },
     },
     {
@@ -231,6 +321,64 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
         },
         required: ["business_name", "customer_email", "customer_name", "local_price"],
+      },
+    },
+    {
+      name: "retrieve_invoice",
+      description: "Retrieve an invoice by code. Returns recipient details, status (DRAFT, OPEN, VIEWED, PAID, VOID), and the linked charge once payment begins.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          code: { type: "string", description: "Invoice short code" },
+        },
+        required: ["code"],
+      },
+    },
+    {
+      name: "list_invoices",
+      description: "List invoices, newest first. Cursor pagination via starting_after / ending_before.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "Max results per page (default 25, max 100)" },
+          starting_after: { type: "string", description: "Cursor: return results after this invoice id" },
+          ending_before: { type: "string", description: "Cursor: return results before this invoice id" },
+          order: { type: "string", enum: ["asc", "desc"], description: "Sort order by created_at. Defaults to desc." },
+        },
+      },
+    },
+    {
+      name: "void_invoice",
+      description: "Void an unpaid invoice. The recipient can no longer pay it. Already-paid invoices cannot be voided — refund out-of-band if needed.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          code: { type: "string", description: "Invoice short code to void" },
+        },
+        required: ["code"],
+      },
+    },
+    {
+      name: "list_exchange_rates",
+      description: "Fetch current Coinbase exchange rates for a base asset (e.g. BTC, ETH, USDC) against every supported fiat and crypto. Useful for quoting or reconciling fiat-equivalent amounts. This endpoint is public and does not require the API key.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currency: { type: "string", description: "Base currency code (e.g. BTC, ETH, USDC, USD). Defaults to USD." },
+        },
+      },
+    },
+    {
+      name: "verify_webhook_signature",
+      description: "Local helper — verify a Coinbase Commerce webhook payload using HMAC-SHA256. Pass the EXACT raw request body string (do not re-stringify the parsed JSON, byte-equivalence matters) and the X-CC-Webhook-Signature header value. The shared secret comes from COINBASE_COMMERCE_WEBHOOK_SECRET unless overridden. Returns { valid: boolean }.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          raw_body: { type: "string", description: "Exact raw request body bytes as a string" },
+          signature: { type: "string", description: "X-CC-Webhook-Signature header value (hex)" },
+          secret: { type: "string", description: "Override webhook shared secret. Defaults to COINBASE_COMMERCE_WEBHOOK_SECRET env var." },
+        },
+        required: ["raw_body", "signature"],
       },
     },
   ],
@@ -263,6 +411,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("POST", "/checkouts", a), null, 2) }] };
       case "retrieve_checkout":
         return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/checkouts/${encodeURIComponent(String(a.id ?? ""))}`), null, 2) }] };
+      case "list_checkouts": {
+        const query = qs({
+          limit: a.limit,
+          starting_after: a.starting_after,
+          ending_before: a.ending_before,
+          order: a.order,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/checkouts${query}`), null, 2) }] };
+      }
+      case "update_checkout": {
+        const { id, ...body } = a;
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("PUT", `/checkouts/${encodeURIComponent(String(id ?? ""))}`, body), null, 2) }] };
+      }
+      case "delete_checkout":
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("DELETE", `/checkouts/${encodeURIComponent(String(a.id ?? ""))}`), null, 2) }] };
       case "list_events": {
         const query = qs({
           limit: a.limit,
@@ -272,8 +435,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         });
         return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/events${query}`), null, 2) }] };
       }
+      case "retrieve_event":
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/events/${encodeURIComponent(String(a.id ?? ""))}`), null, 2) }] };
       case "create_invoice":
         return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("POST", "/invoices", a), null, 2) }] };
+      case "retrieve_invoice":
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/invoices/${encodeURIComponent(String(a.code ?? ""))}`), null, 2) }] };
+      case "list_invoices": {
+        const query = qs({
+          limit: a.limit,
+          starting_after: a.starting_after,
+          ending_before: a.ending_before,
+          order: a.order,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/invoices${query}`), null, 2) }] };
+      }
+      case "void_invoice":
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("PUT", `/invoices/${encodeURIComponent(String(a.code ?? ""))}/void`), null, 2) }] };
+      case "list_exchange_rates": {
+        const query = qs({ currency: a.currency });
+        return { content: [{ type: "text", text: JSON.stringify(await coinbaseRequest("GET", `/exchange-rates${query}`), null, 2) }] };
+      }
+      case "verify_webhook_signature": {
+        const rawBody = String(a.raw_body ?? "");
+        const signature = String(a.signature ?? "");
+        const secret = String(a.secret ?? WEBHOOK_SECRET ?? "");
+        if (!secret) {
+          return { content: [{ type: "text", text: "Error: webhook secret missing — set COINBASE_COMMERCE_WEBHOOK_SECRET or pass `secret`." }], isError: true };
+        }
+        const valid = verifyWebhook(rawBody, signature, secret);
+        return { content: [{ type: "text", text: JSON.stringify({ valid }, null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -296,7 +488,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-coinbase-commerce", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-coinbase-commerce", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);

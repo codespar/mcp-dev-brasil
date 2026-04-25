@@ -7,12 +7,12 @@
     "source": "github",
     "subfolder": "packages/crypto/coinbase-commerce"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@codespar/mcp-coinbase-commerce",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "transport": {
         "type": "stdio"
       },
@@ -30,6 +30,13 @@
           "isRequired": false,
           "format": "string",
           "isSecret": false
+        },
+        {
+          "name": "COINBASE_COMMERCE_WEBHOOK_SECRET",
+          "description": "Shared secret used to verify X-CC-Webhook-Signature on incoming webhooks. Only required for the verify_webhook_signature tool.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
         }
       ]
     }
