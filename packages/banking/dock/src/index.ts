@@ -8,17 +8,27 @@
  * Card issuing is the key differentiator vs Matera — Dock is historically
  * a card-issuing platform that expanded into full BaaS.
  *
- * Tools (10) — Banking + Pix + Card Issuing for v0.1:
- *   create_account          — POST /accounts (digital account for an end user)
- *   get_account             — GET  /accounts/{id}
- *   send_pix                — POST /pix/payments (outbound Pix transfer)
- *   get_pix                 — GET  /pix/payments/{endToEndId}
- *   create_pix_qr_static    — POST /pix/qrcodes/static
- *   create_pix_qr_dynamic   — POST /pix/qrcodes/dynamic
- *   refund_pix              — POST /pix/payments/{endToEndId}/refund
- *   resolve_dict_key        — GET  /pix/dict/{key}
- *   issue_card              — POST /cards (Dock's core differentiator)
- *   get_card                — GET  /cards/{id}
+ * Tools (20) — Banking + Pix + Card Issuing + Webhooks:
+ *   create_account          — POST   /accounts (digital account for an end user)
+ *   get_account             — GET    /accounts/{id}
+ *   list_accounts           — GET    /accounts
+ *   freeze_account          — POST   /accounts/{id}/freeze
+ *   unfreeze_account        — POST   /accounts/{id}/unfreeze
+ *   send_pix                — POST   /pix/payments (outbound Pix transfer)
+ *   get_pix                 — GET    /pix/payments/{endToEndId}
+ *   create_pix_qr_static    — POST   /pix/qrcodes/static
+ *   create_pix_qr_dynamic   — POST   /pix/qrcodes/dynamic
+ *   refund_pix              — POST   /pix/payments/{endToEndId}/refund
+ *   resolve_dict_key        — GET    /pix/dict/{key}
+ *   issue_card              — POST   /cards (Dock's core differentiator)
+ *   get_card                — GET    /cards/{id}
+ *   block_card              — POST   /cards/{id}/block
+ *   unblock_card            — POST   /cards/{id}/unblock
+ *   change_card_status      — PATCH  /cards/{id}/status
+ *   list_transactions       — GET    /accounts/{id}/transactions
+ *   get_transaction         — GET    /transactions/{id}
+ *   create_webhook          — POST   /webhooks
+ *   list_webhooks           — GET    /webhooks
  *
  * -------------------------------------------------------------------------
  * ALPHA STATUS — endpoint paths below are NOT verified against a live sandbox.
@@ -109,7 +119,7 @@ async function dockRequest(method: string, path: string, body?: unknown): Promis
 }
 
 const server = new Server(
-  { name: "mcp-dock", version: "0.1.0" },
+  { name: "mcp-dock", version: "0.2.0" },
   { capabilities: { tools: {} } },
 );
 
@@ -291,6 +301,136 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["card_id"],
       },
     },
+    {
+      name: "list_accounts",
+      description: "List Dock accounts under the merchant. Supports pagination and filtering by holder document or status.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cpf: { type: "string", description: "Filter by holder CPF (11 digits)" },
+          status: { type: "string", enum: ["ACTIVE", "FROZEN", "CLOSED"], description: "Filter by account status" },
+          page: { type: "number", description: "Page number (1-based)" },
+          page_size: { type: "number", description: "Results per page (default 20, max 100)" },
+        },
+      },
+    },
+    {
+      name: "freeze_account",
+      description: "Freeze (block) a Dock account. Pix outflows and card spend are halted but balance is preserved. Used for fraud holds, KYC re-verification, or judicial blocks.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          account_id: { type: "string", description: "Dock account id" },
+          reason: { type: "string", description: "Reason code or free-text justification (logged for audit)" },
+        },
+        required: ["account_id"],
+      },
+    },
+    {
+      name: "unfreeze_account",
+      description: "Unfreeze a previously frozen Dock account, restoring Pix and card operations.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          account_id: { type: "string", description: "Dock account id" },
+          reason: { type: "string", description: "Reason for the unblock (optional, logged)" },
+        },
+        required: ["account_id"],
+      },
+    },
+    {
+      name: "block_card",
+      description: "Block a card temporarily (reversible). Use for lost-card or fraud-suspected flows. Card status goes to BLOCKED — declines all authorizations until unblocked. Different from change_card_status which permanently cancels.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          card_id: { type: "string", description: "Dock card id" },
+          reason: { type: "string", description: "Reason: LOST, STOLEN, SUSPECTED_FRAUD, CARDHOLDER_REQUEST" },
+        },
+        required: ["card_id"],
+      },
+    },
+    {
+      name: "unblock_card",
+      description: "Unblock a card that was previously blocked (reversible). Restores card to ACTIVE status. Cannot be used on permanently CANCELED cards.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          card_id: { type: "string", description: "Dock card id" },
+        },
+        required: ["card_id"],
+      },
+    },
+    {
+      name: "change_card_status",
+      description: "Change a card's lifecycle status: ACTIVE / BLOCKED / CANCELED. Use CANCELED for permanent termination (replacement card, account closure). Status transitions are constrained — see Dock issuing docs.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          card_id: { type: "string", description: "Dock card id" },
+          status: {
+            type: "string",
+            enum: ["ACTIVE", "BLOCKED", "CANCELED"],
+            description: "Target status",
+          },
+          reason: { type: "string", description: "Reason code or free text" },
+        },
+        required: ["card_id", "status"],
+      },
+    },
+    {
+      name: "list_transactions",
+      description: "List transactions on a Dock account (Pix in/out, card auths, fees, transfers). Supports date range and pagination. Returns ordered by timestamp desc.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          account_id: { type: "string", description: "Dock account id" },
+          start_date: { type: "string", description: "ISO-8601 date or datetime (inclusive)" },
+          end_date: { type: "string", description: "ISO-8601 date or datetime (inclusive)" },
+          type: { type: "string", description: "Filter by transaction type (PIX_IN, PIX_OUT, CARD_AUTH, FEE, etc.)" },
+          page: { type: "number", description: "Page number (1-based)" },
+          page_size: { type: "number", description: "Results per page (default 50, max 200)" },
+        },
+        required: ["account_id"],
+      },
+    },
+    {
+      name: "get_transaction",
+      description: "Retrieve a single transaction by id. Returns full detail including counterparty, fees, and originating event (Pix endToEndId, card auth code, etc.).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          transaction_id: { type: "string", description: "Dock transaction id" },
+        },
+        required: ["transaction_id"],
+      },
+    },
+    {
+      name: "create_webhook",
+      description: "Register a webhook endpoint to receive Dock event notifications (account.*, pix.*, card.*, transaction.*). Dock signs payloads with HMAC; verify the signature on receipt.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "HTTPS endpoint that will receive POSTed events" },
+          events: {
+            type: "array",
+            items: { type: "string" },
+            description: "Event types to subscribe to (e.g. ['pix.received','card.authorized']). Use ['*'] for all.",
+          },
+          secret: { type: "string", description: "Optional shared secret used for HMAC signature verification" },
+          description: { type: "string", description: "Free-text label" },
+        },
+        required: ["url", "events"],
+      },
+    },
+    {
+      name: "list_webhooks",
+      description: "List all webhook endpoints registered for the merchant. Returns id, url, subscribed events, and active status.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
   ],
 }));
 
@@ -336,6 +476,64 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const id = encodeURIComponent(String(a.card_id ?? ""));
         return { content: [{ type: "text", text: JSON.stringify(await dockRequest("GET", `/cards/${id}`), null, 2) }] };
       }
+      // TODO(verify): list_accounts wrapper path; `/accounts?cpf=&status=&page=` is the standard shape.
+      case "list_accounts": {
+        const qs = new URLSearchParams();
+        if (a.cpf) qs.set("cpf", String(a.cpf));
+        if (a.status) qs.set("status", String(a.status));
+        if (a.page) qs.set("page", String(a.page));
+        if (a.page_size) qs.set("page_size", String(a.page_size));
+        const q = qs.toString();
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("GET", `/accounts${q ? `?${q}` : ""}`), null, 2) }] };
+      }
+      case "freeze_account": {
+        const id = encodeURIComponent(String(a.account_id ?? ""));
+        const body: Record<string, unknown> = {};
+        if (a.reason) body.reason = a.reason;
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("POST", `/accounts/${id}/freeze`, body), null, 2) }] };
+      }
+      case "unfreeze_account": {
+        const id = encodeURIComponent(String(a.account_id ?? ""));
+        const body: Record<string, unknown> = {};
+        if (a.reason) body.reason = a.reason;
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("POST", `/accounts/${id}/unfreeze`, body), null, 2) }] };
+      }
+      case "block_card": {
+        const id = encodeURIComponent(String(a.card_id ?? ""));
+        const body: Record<string, unknown> = {};
+        if (a.reason) body.reason = a.reason;
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("POST", `/cards/${id}/block`, body), null, 2) }] };
+      }
+      case "unblock_card": {
+        const id = encodeURIComponent(String(a.card_id ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("POST", `/cards/${id}/unblock`, {}), null, 2) }] };
+      }
+      case "change_card_status": {
+        const id = encodeURIComponent(String(a.card_id ?? ""));
+        const body: Record<string, unknown> = { status: a.status };
+        if (a.reason) body.reason = a.reason;
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("PATCH", `/cards/${id}/status`, body), null, 2) }] };
+      }
+      // TODO(verify): transactions list path; `/accounts/{id}/transactions` is conventional but Dock may use a top-level `/transactions?account_id=`.
+      case "list_transactions": {
+        const id = encodeURIComponent(String(a.account_id ?? ""));
+        const qs = new URLSearchParams();
+        if (a.start_date) qs.set("start_date", String(a.start_date));
+        if (a.end_date) qs.set("end_date", String(a.end_date));
+        if (a.type) qs.set("type", String(a.type));
+        if (a.page) qs.set("page", String(a.page));
+        if (a.page_size) qs.set("page_size", String(a.page_size));
+        const q = qs.toString();
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("GET", `/accounts/${id}/transactions${q ? `?${q}` : ""}`), null, 2) }] };
+      }
+      case "get_transaction": {
+        const id = encodeURIComponent(String(a.transaction_id ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("GET", `/transactions/${id}`), null, 2) }] };
+      }
+      case "create_webhook":
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("POST", "/webhooks", a), null, 2) }] };
+      case "list_webhooks":
+        return { content: [{ type: "text", text: JSON.stringify(await dockRequest("GET", "/webhooks"), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -361,7 +559,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-dock", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-dock", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v));
         (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v));
         await s.connect(t);
