@@ -4,16 +4,19 @@
  * MCP Server for Foxbit — Brazilian cryptocurrency exchange.
  *
  * Tools:
- * - list_markets: List all available trading pairs
- * - get_ticker: Get 24h ticker data for a market
- * - get_orderbook: Get order book for a market
- * - get_account_balances: Get account balances
- * - create_order: Create a buy or sell order (limit/market)
- * - get_order: Get order details by ID
- * - list_orders: List orders with filters
- * - cancel_order: Cancel an open order
- * - list_trades: List executed trades
- * - list_deposits_withdrawals: List deposits and withdrawals for a currency
+ * Public market data:
+ * - list_markets, list_currencies, get_currency, list_pairs
+ * - get_ticker, get_orderbook, get_market_trades, get_candles
+ * Account & balances:
+ * - get_account_balances, get_balance
+ * Orders & trades:
+ * - create_order, get_order, list_orders, cancel_order, list_trades
+ * Pix (BR instant payments):
+ * - create_pix_deposit, list_pix_deposits, create_pix_withdrawal, list_pix_withdrawals
+ * Crypto withdrawals & transactions:
+ * - create_crypto_withdrawal, list_deposits_withdrawals
+ * Fees:
+ * - get_trading_fees
  *
  * Environment:
  *   FOXBIT_API_KEY — API key from https://app.foxbit.com.br/
@@ -75,7 +78,7 @@ async function foxbitRequest(
 }
 
 const server = new Server(
-  { name: "mcp-foxbit", version: "0.1.0" },
+  { name: "mcp-foxbit", version: "0.2.0" },
   { capabilities: { tools: {} } },
 );
 
@@ -85,6 +88,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       name: "list_markets",
       description: "List all available trading pairs / markets on Foxbit",
       inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "list_currencies",
+      description: "List all supported currencies (crypto and fiat) on Foxbit",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_currency",
+      description: "Get details of a specific currency (precision, min/max amounts, type)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          symbol: { type: "string", description: "Currency symbol (e.g. btc, brl, eth)" },
+        },
+        required: ["symbol"],
+      },
     },
     {
       name: "get_ticker",
@@ -110,9 +129,48 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_market_trades",
+      description: "Get recent public trades for a market (trade history / tape)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          symbol: { type: "string", description: "Market symbol (e.g. btcbrl)" },
+          page_size: { type: "number", description: "Results per page (max 100)" },
+          page: { type: "number", description: "Page number" },
+        },
+        required: ["symbol"],
+      },
+    },
+    {
+      name: "get_candles",
+      description: "Get OHLC candlestick data for a market",
+      inputSchema: {
+        type: "object",
+        properties: {
+          symbol: { type: "string", description: "Market symbol (e.g. btcbrl)" },
+          interval: { type: "string", enum: ["1m", "5m", "15m", "30m", "1h", "4h", "12h", "1d", "1w"], description: "Candle interval" },
+          start_time: { type: "string", description: "Start time (ISO 8601)" },
+          end_time: { type: "string", description: "End time (ISO 8601)" },
+          limit: { type: "number", description: "Max number of candles to return" },
+        },
+        required: ["symbol", "interval"],
+      },
+    },
+    {
       name: "get_account_balances",
       description: "Get account balances for all currencies",
       inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "get_balance",
+      description: "Get account balance for a single currency",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currency_symbol: { type: "string", description: "Currency symbol (e.g. brl, btc, eth)" },
+        },
+        required: ["currency_symbol"],
+      },
     },
     {
       name: "create_order",
@@ -171,7 +229,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "list_trades",
-      description: "List user's executed trades",
+      description: "List user's executed trades (private trade history)",
       inputSchema: {
         type: "object",
         properties: {
@@ -199,6 +257,76 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["currency_symbol"],
       },
     },
+    {
+      name: "create_pix_deposit",
+      description: "Create a Pix instant deposit (BRL). Returns Pix QR code / copy-paste payload.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          amount: { type: "string", description: "Deposit amount in BRL (e.g. \"100.00\")" },
+        },
+        required: ["amount"],
+      },
+    },
+    {
+      name: "list_pix_deposits",
+      description: "List Pix deposit history (BRL instant deposits)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          start_time: { type: "string", description: "Start time (ISO 8601)" },
+          end_time: { type: "string", description: "End time (ISO 8601)" },
+          page_size: { type: "number", description: "Results per page" },
+          page: { type: "number", description: "Page number" },
+        },
+      },
+    },
+    {
+      name: "create_pix_withdrawal",
+      description: "Create a Pix withdrawal (BRL) to a Pix key",
+      inputSchema: {
+        type: "object",
+        properties: {
+          amount: { type: "string", description: "Withdrawal amount in BRL (e.g. \"100.00\")" },
+          pix_key: { type: "string", description: "Destination Pix key (CPF, CNPJ, email, phone, or random key)" },
+          pix_key_type: { type: "string", enum: ["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"], description: "Pix key type" },
+        },
+        required: ["amount", "pix_key", "pix_key_type"],
+      },
+    },
+    {
+      name: "list_pix_withdrawals",
+      description: "List Pix withdrawal history (BRL fiat withdrawals)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          start_time: { type: "string", description: "Start time (ISO 8601)" },
+          end_time: { type: "string", description: "End time (ISO 8601)" },
+          page_size: { type: "number", description: "Results per page" },
+          page: { type: "number", description: "Page number" },
+        },
+      },
+    },
+    {
+      name: "create_crypto_withdrawal",
+      description: "Create a crypto withdrawal to an external wallet address",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currency_symbol: { type: "string", description: "Currency symbol (e.g. btc, eth, usdt)" },
+          amount: { type: "string", description: "Withdrawal amount in base units" },
+          address: { type: "string", description: "Destination wallet address" },
+          network: { type: "string", description: "Blockchain network (e.g. BTC, ERC20, TRC20, POLYGON)" },
+          tag: { type: "string", description: "Memo / tag / destination tag (for XRP, XLM, etc.)" },
+        },
+        required: ["currency_symbol", "amount", "address"],
+      },
+    },
+    {
+      name: "get_trading_fees",
+      description: "Get current trading fees and limits (maker/taker per pair, withdrawal limits)",
+      inputSchema: { type: "object", properties: {} },
+    },
   ],
 }));
 
@@ -209,12 +337,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case "list_markets":
         return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", "/markets"), null, 2) }] };
+      case "list_currencies":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", "/currencies"), null, 2) }] };
+      case "get_currency":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/currencies/${args?.symbol}`), null, 2) }] };
       case "get_ticker":
         return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/markets/${args?.symbol}/ticker/24hr`), null, 2) }] };
       case "get_orderbook":
         return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/markets/${args?.symbol}/orderbook`, { depth: args?.depth as number | undefined }), null, 2) }] };
+      case "get_market_trades": {
+        const { symbol, ...rest } = (args || {}) as Record<string, string | number | undefined>;
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/markets/${symbol}/trades`, rest), null, 2) }] };
+      }
+      case "get_candles": {
+        const { symbol, ...rest } = (args || {}) as Record<string, string | number | undefined>;
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/markets/${symbol}/candlesticks`, rest), null, 2) }] };
+      }
       case "get_account_balances":
         return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", "/accounts"), null, 2) }] };
+      case "get_balance":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/accounts/${args?.currency_symbol}`), null, 2) }] };
       case "create_order":
         return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("POST", "/orders", undefined, args), null, 2) }] };
       case "get_order":
@@ -229,6 +371,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { currency_symbol, ...rest } = (args || {}) as Record<string, string | number | undefined>;
         return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", `/accounts/${currency_symbol}/transactions`, rest), null, 2) }] };
       }
+      case "create_pix_deposit":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("POST", "/accounts/brl/pix/deposits", undefined, args), null, 2) }] };
+      case "list_pix_deposits":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", "/accounts/brl/pix/deposits", args as Record<string, string | number | undefined>), null, 2) }] };
+      case "create_pix_withdrawal":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("POST", "/accounts/brl/pix/withdrawals", undefined, args), null, 2) }] };
+      case "list_pix_withdrawals":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", "/accounts/brl/pix/withdrawals", args as Record<string, string | number | undefined>), null, 2) }] };
+      case "create_crypto_withdrawal": {
+        const { currency_symbol, ...rest } = (args || {}) as Record<string, unknown>;
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("POST", `/accounts/${currency_symbol}/withdrawals`, undefined, rest), null, 2) }] };
+      }
+      case "get_trading_fees":
+        return { content: [{ type: "text", text: JSON.stringify(await foxbitRequest("GET", "/system/fees-and-limits"), null, 2) }] };
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -251,7 +407,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-foxbit", version: "0.1.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
+        const s = new Server({ name: "mcp-foxbit", version: "0.2.0" }, { capabilities: { tools: {} } }); (server as any)._requestHandlers.forEach((v: any, k: any) => (s as any)._requestHandlers.set(k, v)); (server as any)._notificationHandlers?.forEach((v: any, k: any) => (s as any)._notificationHandlers.set(k, v)); await s.connect(t);
         await t.handleRequest(req, res, req.body); return;
       }
       res.status(400).json({ jsonrpc: "2.0", error: { code: -32000, message: "Bad Request" }, id: null });
