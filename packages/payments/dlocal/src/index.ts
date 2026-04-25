@@ -9,16 +9,25 @@
  * single interface. This is the abstraction that per-country PSP servers
  * (Conekta, Wompi, Mercado Pago) cannot provide on their own.
  *
- * Tools (9):
- *   create_payment          — charge a buyer via local method (card, Pix, OXXO, PSE, SPEI, etc)
- *   get_payment             — retrieve payment status
- *   cancel_payment          — cancel an authorized-but-not-captured payment
- *   create_refund           — refund a captured payment (full or partial)
- *   get_refund              — retrieve refund status
- *   create_payout           — send money out to a beneficiary in local currency
- *   get_payout              — retrieve payout status
- *   list_payment_methods    — enumerate available methods per country (dynamic)
- *   get_balance             — merchant account balance
+ * Tools (18):
+ *   create_payment              — charge a buyer via local method (card, Pix, OXXO, PSE, SPEI, etc)
+ *   get_payment                 — retrieve payment status by dLocal id
+ *   get_payment_by_order_id     — retrieve payment by merchant-side order_id
+ *   list_payments               — list payments with date/country/status filters
+ *   capture_payment             — capture an authorized payment (full or partial)
+ *   cancel_payment              — cancel an authorized-but-not-captured payment
+ *   create_refund               — refund a captured payment (full or partial)
+ *   get_refund                  — retrieve refund status
+ *   list_refunds                — list refunds for a payment
+ *   create_payout               — send money out to a beneficiary in local currency
+ *   get_payout                  — retrieve payout status
+ *   get_payout_by_external_id   — retrieve payout by merchant external reference
+ *   list_payouts                — list payouts with date/country/status filters
+ *   list_payment_methods        — enumerate available methods per country (dynamic)
+ *   get_balance                 — merchant account balance
+ *   get_exchange_rate           — query FX rate for currency conversion
+ *   create_card_token           — tokenize a card for DIRECT card flows
+ *   validate_document           — validate local tax IDs (CPF, CNPJ, CUIT, DNI, RUT, RFC)
  *
  * Authentication
  *   dLocal V2 HMAC-SHA256. Every request carries:
@@ -75,8 +84,17 @@ async function dlocalRequest(method: string, path: string, body?: unknown): Prom
   return res.json();
 }
 
+function buildQuery(params: Record<string, unknown>): string {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
 const server = new Server(
-  { name: "mcp-dlocal", version: "0.1.0" },
+  { name: "mcp-dlocal", version: "0.2.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -128,8 +146,49 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "get_payment_by_order_id",
+      description: "Get a payment by the merchant-side order_id supplied at creation time. Useful when the agent only kept its own reference and not dLocal's id.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "Merchant-side order reference passed as order_id when creating the payment" },
+        },
+        required: ["order_id"],
+      },
+    },
+    {
+      name: "list_payments",
+      description: "List payments with optional date / country / status filters. Useful for reconciliation and reporting agents.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          page: { type: "number", description: "Page number (1-indexed)" },
+          page_size: { type: "number", description: "Results per page (max 100)" },
+          status: { type: "string", description: "Filter by status (PAID, PENDING, REJECTED, CANCELLED, EXPIRED, AUTHORIZED, VERIFIED)" },
+          country: { type: "string", description: "ISO-3166 alpha-2 country filter" },
+          created_date_from: { type: "string", description: "Lower bound (ISO-8601 date or datetime)" },
+          created_date_to: { type: "string", description: "Upper bound (ISO-8601 date or datetime)" },
+          payment_method_id: { type: "string", description: "Filter by payment method (CARD, PIX, OX, etc)" },
+        },
+      },
+    },
+    {
+      name: "capture_payment",
+      description: "Capture an AUTHORIZED card payment. Omit amount for full capture; pass amount for partial capture (must be ≤ authorized amount). Card-only.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string", description: "Original AUTHORIZED dLocal payment id" },
+          amount: { type: "number", description: "Partial capture amount in major units. Omit for full capture." },
+          currency: { type: "string", description: "ISO-4217 currency code (must match original payment)" },
+          order_id: { type: "string", description: "Optional merchant reference for the capture" },
+        },
+        required: ["payment_id"],
+      },
+    },
+    {
       name: "cancel_payment",
-      description: "Cancel an authorized-but-not-captured payment. Only works for card payments in AUTHORIZED state.",
+      description: "Cancel an authorized-but-not-captured payment, or void a PENDING payment. Card payments must be in AUTHORIZED state.",
       inputSchema: {
         type: "object",
         properties: {
@@ -161,6 +220,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           id: { type: "string", description: "dLocal refund id (R-xxxx)" },
         },
         required: ["id"],
+      },
+    },
+    {
+      name: "list_refunds",
+      description: "List refunds, optionally scoped to a payment_id. Useful for reconciling partial refunds against the original charge.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string", description: "Optional — only return refunds for this payment id" },
+          page: { type: "number", description: "Page number (1-indexed)" },
+          page_size: { type: "number", description: "Results per page (max 100)" },
+          created_date_from: { type: "string", description: "Lower bound (ISO-8601)" },
+          created_date_to: { type: "string", description: "Upper bound (ISO-8601)" },
+        },
       },
     },
     {
@@ -196,13 +269,39 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "get_payout",
-      description: "Get payout status by payout id.",
+      description: "Get payout status by dLocal payout id.",
       inputSchema: {
         type: "object",
         properties: {
           id: { type: "string", description: "dLocal payout id (P-xxxx)" },
         },
         required: ["id"],
+      },
+    },
+    {
+      name: "get_payout_by_external_id",
+      description: "Get a payout by the merchant external_id / order_id supplied at creation time. Mirror of get_payment_by_order_id for the payouts side.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          external_id: { type: "string", description: "Merchant-side payout reference (order_id used at create_payout time)" },
+        },
+        required: ["external_id"],
+      },
+    },
+    {
+      name: "list_payouts",
+      description: "List payouts with optional date / country / status filters. Useful for settlement reconciliation across countries.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          page: { type: "number", description: "Page number (1-indexed)" },
+          page_size: { type: "number", description: "Results per page (max 100)" },
+          status: { type: "string", description: "Filter by status (PAID, PENDING, REJECTED, CANCELLED)" },
+          country: { type: "string", description: "ISO-3166 alpha-2 country filter" },
+          created_date_from: { type: "string", description: "Lower bound (ISO-8601)" },
+          created_date_to: { type: "string", description: "Upper bound (ISO-8601)" },
+        },
       },
     },
     {
@@ -221,6 +320,49 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Get the merchant's current available balance per currency.",
       inputSchema: { type: "object", properties: {} },
     },
+    {
+      name: "get_exchange_rate",
+      description: "Query the dLocal FX rate for a destination country/currency pair. Used to preview converted amounts before a payout or USD-funded charge.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          from_currency: { type: "string", description: "Source currency ISO-4217 (typically USD or EUR)" },
+          to_currency: { type: "string", description: "Destination local currency ISO-4217 (BRL, MXN, ARS, etc)" },
+          country: { type: "string", description: "Destination country ISO-3166 alpha-2" },
+          amount: { type: "number", description: "Optional source amount to convert; the response will include the destination value" },
+        },
+        required: ["from_currency", "to_currency", "country"],
+      },
+    },
+    {
+      name: "create_card_token",
+      description: "Tokenize a card for use in DIRECT-flow create_payment. Use the returned token in the card.token field instead of raw PAN. Required for PCI scope reduction.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          holder_name: { type: "string", description: "Cardholder full name" },
+          card_number: { type: "string", description: "Card PAN (digits only, no spaces)" },
+          cvv: { type: "string", description: "Card verification value" },
+          expiration_month: { type: "number", description: "1-12" },
+          expiration_year: { type: "number", description: "4-digit year (e.g. 2028)" },
+          country: { type: "string", description: "Issuing country ISO-3166 alpha-2 (optional; helps method routing)" },
+        },
+        required: ["holder_name", "card_number", "cvv", "expiration_month", "expiration_year"],
+      },
+    },
+    {
+      name: "validate_document",
+      description: "Validate a LatAm tax/identity document (CPF or CNPJ in BR, CUIT/CUIL/DNI in AR, RUT in CL/UY, RFC/CURP in MX, etc). Returns whether the document is well-formed and, when supported, registry-validated.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          country: { type: "string", description: "ISO-3166 alpha-2 (BR, AR, CL, UY, MX, CO, PE, EC, BO, CR, GT)" },
+          document_type: { type: "string", description: "Document type code (CPF, CNPJ, CUIT, CUIL, DNI, RUT, RFC, CURP, NIT, RUC, CI)" },
+          document: { type: "string", description: "Document number (digits only when applicable)" },
+        },
+        required: ["country", "document_type", "document"],
+      },
+    },
   ],
 }));
 
@@ -233,6 +375,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("POST", "/secure_payments", args), null, 2) }] };
       case "get_payment":
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payments/${args?.id}`), null, 2) }] };
+      case "get_payment_by_order_id": {
+        const order = encodeURIComponent(String(args?.order_id ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payments?order_id=${order}`), null, 2) }] };
+      }
+      case "list_payments": {
+        const qs = buildQuery({
+          page: args?.page,
+          page_size: args?.page_size,
+          status: args?.status,
+          country: args?.country,
+          created_date_from: args?.created_date_from,
+          created_date_to: args?.created_date_to,
+          payment_method_id: args?.payment_method_id,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payments${qs}`), null, 2) }] };
+      }
+      case "capture_payment": {
+        const body: Record<string, unknown> = { authorization_id: args?.payment_id };
+        if (args?.amount !== undefined) body.amount = args.amount;
+        if (args?.currency) body.currency = args.currency;
+        if (args?.order_id) body.order_id = args.order_id;
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("POST", "/payments", body), null, 2) }] };
+      }
       case "cancel_payment":
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("POST", `/payments/${args?.id}/cancel`), null, 2) }] };
       case "create_refund": {
@@ -244,16 +409,60 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "get_refund":
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/refunds/${args?.id}`), null, 2) }] };
+      case "list_refunds": {
+        const qs = buildQuery({
+          payment_id: args?.payment_id,
+          page: args?.page,
+          page_size: args?.page_size,
+          created_date_from: args?.created_date_from,
+          created_date_to: args?.created_date_to,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/refunds${qs}`), null, 2) }] };
+      }
       case "create_payout":
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("POST", "/payouts", args), null, 2) }] };
       case "get_payout":
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payouts/${args?.id}`), null, 2) }] };
+      case "get_payout_by_external_id": {
+        const ext = encodeURIComponent(String(args?.external_id ?? ""));
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payouts?external_id=${ext}`), null, 2) }] };
+      }
+      case "list_payouts": {
+        const qs = buildQuery({
+          page: args?.page,
+          page_size: args?.page_size,
+          status: args?.status,
+          country: args?.country,
+          created_date_from: args?.created_date_from,
+          created_date_to: args?.created_date_to,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payouts${qs}`), null, 2) }] };
+      }
       case "list_payment_methods": {
         const country = encodeURIComponent(String(args?.country ?? ""));
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/payments-methods?country=${country}`), null, 2) }] };
       }
       case "get_balance":
         return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", "/accounts/balance"), null, 2) }] };
+      case "get_exchange_rate": {
+        const qs = buildQuery({
+          from_currency: args?.from_currency,
+          to_currency: args?.to_currency,
+          country: args?.country,
+          amount: args?.amount,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("GET", `/exchange_rates${qs}`), null, 2) }] };
+      }
+      case "create_card_token":
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("POST", "/secure_cards", args), null, 2) }] };
+      case "validate_document": {
+        const body: Record<string, unknown> = {
+          country: args?.country,
+          document_type: args?.document_type,
+          document: args?.document,
+        };
+        return { content: [{ type: "text", text: JSON.stringify(await dlocalRequest("POST", "/documents/validate", body), null, 2) }] };
+      }
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -276,7 +485,7 @@ async function main() {
       if (!sid && isInitializeRequest(req.body)) {
         const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), onsessioninitialized: (id) => { transports.set(id, t); } });
         t.onclose = () => { if (t.sessionId) transports.delete(t.sessionId); };
-        const s = new Server({ name: "mcp-dlocal", version: "0.1.0" }, { capabilities: { tools: {} } });
+        const s = new Server({ name: "mcp-dlocal", version: "0.2.0" }, { capabilities: { tools: {} } });
         (server as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.forEach((v, k) => (s as unknown as { _requestHandlers: Map<unknown, unknown> })._requestHandlers.set(k, v));
         (server as unknown as { _notificationHandlers?: Map<unknown, unknown> })._notificationHandlers?.forEach((v, k) => (s as unknown as { _notificationHandlers: Map<unknown, unknown> })._notificationHandlers.set(k, v));
         await s.connect(t);
