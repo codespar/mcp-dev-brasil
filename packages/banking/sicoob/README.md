@@ -68,6 +68,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-sicoob
 - **Paths are unverified.** See the `TODO(verify)` markers in `src/index.ts`. Onboarded cooperatives should validate against their portal-issued OpenAPI spec and open a PR.
 - **Sandbox host is a guess.** Sicoob issues a sandbox subdomain per cooperative; override by editing `BASE_URL` if your provisioned sandbox URL differs.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

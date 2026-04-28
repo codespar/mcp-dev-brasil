@@ -68,6 +68,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-picpay
 
 `0.1.0-alpha.1`. Core checkout endpoints (`/payments`, `/payments/{ref}/status`, `/payments/{ref}/cancellations`) are verified against PicPay's public docs. Recurrency (plans + subscriptions) endpoints come from the documented path shape but field-level schemas (frequency enum values, subscription response) should be confirmed against the live API before production use.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

@@ -113,6 +113,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-onfido
 | Regulated fintech needing AML watchlist + PEP screening globally | Onfido |
 | Travel / gig marketplace onboarding across 20+ countries | Onfido |
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

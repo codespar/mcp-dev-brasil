@@ -104,6 +104,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-amazon
 
 `0.1.0-alpha.1` — SP-API has 30+ product sections and this package covers the commerce-relevant subset (orders, listings, catalog, inventory, reports, finances, shipping, notifications). Endpoint paths and auth flow are implemented to the published spec; tool contracts should be integration-tested against real seller tokens before production use. The LWA refresh flow and `x-amz-access-token` header usage are confirmed against current SP-API docs.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

@@ -66,6 +66,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-paypal
 - The server forwards arbitrary REST body fields verbatim under `body` for tools that accept them, so any field documented in the PayPal REST reference can be passed even if it's not in the MCP `inputSchema`.
 - For payment captures / refunds the `PayPal-Request-Id` header (idempotency) is forwarded when supplied.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

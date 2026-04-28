@@ -93,6 +93,10 @@ Use Xero for companies headquartered or operating outside Brazil (or with intern
 - Xero Accounting API: https://developer.xero.com/documentation/api/accounting
 - Xero OAuth2 guide: https://developer.xero.com/documentation/guides/oauth2/overview
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

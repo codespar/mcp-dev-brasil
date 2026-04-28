@@ -71,6 +71,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-culqi
 - **Tokenization** of raw card data is typically done client-side (culqi.js / mobile SDKs). The `create_token` tool is primarily for test scripts — never send real PANs from a backend without PCI scope.
 - **Subscriptions** require `tyc: true` (terms & conditions acceptance) on creation.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

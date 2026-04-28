@@ -71,6 +71,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-unico
 
 Shipped as `0.1.0-alpha.1`. Unico's REST contract lives behind the [devcenter.unico.io](https://devcenter.unico.io) portal and is gated by merchant account. Tool names and argument shapes are stable, but exact endpoint paths may shift once we validate against live credentials — override `UNICO_BASE_URL` / `UNICO_AUTH_URL` if your account is served from a different host. PRs welcome once you've seen the real payloads.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

@@ -69,6 +69,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-dlocal
 
 Argentina, Bolivia, Brazil, Chile, Colombia, Costa Rica, Ecuador, Guatemala, Mexico, Peru, Uruguay, and more. Use `list_payment_methods` to enumerate available methods per country at runtime rather than hard-coding.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

@@ -106,6 +106,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-sift
 
 `fraud` — third entry after ClearSale and Konduto. BR merchants operating internationally commonly pair Sift (global payment/account abuse) with ClearSale or Konduto (BR-specific chargeback history / device intelligence).
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

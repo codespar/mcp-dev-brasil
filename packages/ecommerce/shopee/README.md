@@ -81,6 +81,10 @@ Select with `SHOPEE_ENV`.
 
 `0.1.0-alpha.1` — Shopee's Partner API documentation portal requires developer registration, so some endpoint payloads and field-level contracts (especially around `ship_order` pickup/dropoff objects and logistics channel specifics) should be validated against the live docs before production use. The signing recipe and base-URL selection are implemented to spec.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

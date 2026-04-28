@@ -84,6 +84,10 @@ An agent that can offer both at checkout converts materially better than one tha
 - [`@codespar/mcp-transbank`](../transbank) — Chilean card acquiring (Webpay Plus, Oneclick, Full Transaction)
 - [`@codespar/mcp-dlocal`](../dlocal) — cross-border LatAm coverage when you need CL + other countries through one API
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

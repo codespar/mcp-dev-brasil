@@ -65,4 +65,10 @@ Uses **API key + session** authentication. The API key is sent with each request
 
 ---
 
-**Enterprise?** Contact us at [codespar.com](https://codespar.com) for dedicated support, custom integrations, and SLAs.
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
+## License
+
+MIT

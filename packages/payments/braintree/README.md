@@ -74,6 +74,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-braintree
 - **Amount** is a string in Braintree GraphQL (e.g. `"10.50"`), not a number. The server forwards whatever shape the agent passes; strings are the safe default.
 - Braintree's GraphQL schema evolves; some input fields not exposed in the MCP `inputSchema` can still be passed in `additional` / nested objects and will be forwarded.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

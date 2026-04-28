@@ -78,6 +78,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-itau
 - **Sandbox host is a guess.** Itaú issues a sandbox subdomain per merchant; override by editing `BASE_URL` if your provisioned sandbox URL differs.
 - **Arrecadação barcode validation** is server-side in this alpha — no client-side mod-10 / mod-11 check yet.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT

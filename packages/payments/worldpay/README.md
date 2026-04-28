@@ -94,6 +94,10 @@ MCP_HTTP=true MCP_PORT=3000 npx @codespar/mcp-worldpay
 - **Global Payments acquired Worldpay in January 2026.** Base URLs (`try.access.worldpay.com` / `access.worldpay.com`) remain valid as of this writing, but Global Payments has publicly signalled platform consolidation. Expect URL and media-type rebranding over the next 12–18 months. Pin the `WORLDPAY_API_VERSION` env var and watch the [release notes](https://developer.worldpay.com/products/releases).
 - This server does **not** cover: Worldpay Total (US CNP-API legacy), the WPG/FIS XML gateway, Disputes Direct (separate from Access Disputes), or Worldpay for Platforms. Those are separate surfaces and would be separate packages.
 
+## Enterprise
+
+Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
+
 ## License
 
 MIT
