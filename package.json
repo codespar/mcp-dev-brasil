@@ -19,7 +19,10 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "test": "vitest run"
+    "test": "vitest run",
+    "audit:catalog": "python3 scripts/audit-catalog.py",
+    "audit:catalog:json": "python3 scripts/audit-catalog.py --json",
+    "audit:catalog:write": "python3 scripts/audit-catalog.py --out docs/catalog-audit.md"
   },
   "devDependencies": {
     "vitest": "^3.1.1"
