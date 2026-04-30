@@ -65,6 +65,14 @@ Uses **Bearer token** authentication. Obtain your API token from the [Skydropx D
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `SKYDROPX_API_TOKEN` *(required, secret)* — API token for Skydropx
+
+Issue credentials at the provider's developer portal: <https://skydropx.readme.io>.
+
 ## License
 
 MIT

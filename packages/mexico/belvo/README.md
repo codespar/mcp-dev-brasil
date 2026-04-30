@@ -70,6 +70,16 @@ Uses **Basic authentication** (secret_id:secret_password). Obtain your credentia
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `BELVO_SECRET_ID` *(required, secret)* — Secret ID for Belvo
+- `BELVO_SECRET_PASSWORD` *(required, secret)* — Secret password for Belvo
+- `BELVO_SANDBOX` — Set to true to use sandbox environment
+
+Issue credentials at the provider's developer portal: <https://developers.belvo.com>.
+
 ## License
 
 MIT

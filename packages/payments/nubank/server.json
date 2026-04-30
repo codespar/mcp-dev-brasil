@@ -33,6 +33,7 @@
     "logoFallback": "https://www.google.com/s2/favicons?domain=nubank.com.br&sz=128",
     "sandbox": {
       "available": false
-    }
+    },
+    "docsUrl": "https://openfinancebrasil.org.br"
   }
 }

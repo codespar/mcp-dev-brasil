@@ -62,6 +62,14 @@ Uses **API key header** authentication (`X-API-KEY`). Obtain your API key from t
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `BIND_API_KEY` *(required, secret)* — API key for Bind ERP
+
+Issue credentials at the provider's developer portal: <https://www.bind.com.mx/desarrolladores>.
+
 ## License
 
 MIT

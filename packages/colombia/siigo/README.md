@@ -66,6 +66,15 @@ Uses **Bearer token** authentication. Obtain your access token from the Siigo de
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `SIIGO_API_KEY` *(required, secret)* — API key for Siigo
+- `SIIGO_ACCESS_TOKEN` *(required, secret)* — Bearer access token
+
+Issue credentials at the provider's developer portal: <https://siigoapi.docs.apiary.io>.
+
 ## License
 
 MIT

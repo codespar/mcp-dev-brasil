@@ -106,6 +106,15 @@ Pass `--demo` or set `MCP_DEMO=true` to return canned responses without hitting 
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `NFEIO_API_KEY` *(required, secret)* — API key for NFe.io (issuance + query)
+- `NFEIO_COMPANY_ID` — Default company ID (CNPJ or NFe.io company UUID) to use when not provided per-call
+
+Issue credentials at the provider's developer portal: <https://nfe.io/docs>.
+
 ## License
 
 MIT

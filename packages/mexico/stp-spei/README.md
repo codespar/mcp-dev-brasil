@@ -65,6 +65,15 @@ Uses **API key + digital signature** authentication. The API key is sent as a Be
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `STP_API_KEY` *(required, secret)* — API key for STP
+- `STP_COMPANY` *(required)* — Company identifier for STP
+
+Issue credentials at the provider's developer portal: <https://stpmex.com/docs>.
+
 ## License
 
 MIT

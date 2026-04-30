@@ -71,6 +71,14 @@ Register your application at the [Banco Inter Developer Portal](https://develope
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `INTER_CLIENT_ID` *(required, secret)* — API key/token for inter-bank
+
+Issue credentials at the provider's developer portal: <https://developers.inter.co>.
+
 ## License
 
 MIT
