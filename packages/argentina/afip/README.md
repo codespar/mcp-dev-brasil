@@ -70,6 +70,16 @@ Uses **certificate-based WSAA authentication** (SOAP). The MCP server wraps AFIP
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `AFIP_CERT_PATH` *(required)* — Path to AFIP certificate (.crt)
+- `AFIP_KEY_PATH` *(required, secret)* — Path to AFIP private key (.key)
+- `AFIP_CUIT` *(required)* — CUIT number
+
+Issue credentials at the provider's developer portal: <https://www.afip.gob.ar/ws>.
+
 ## License
 
 MIT

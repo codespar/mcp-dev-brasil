@@ -33,6 +33,7 @@
     "logoFallback": "https://www.google.com/s2/favicons?domain=unblockpay.com&sz=128",
     "sandbox": {
       "available": false
-    }
+    },
+    "docsUrl": "https://docs.unblock.com"
   }
 }

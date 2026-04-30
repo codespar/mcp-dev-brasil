@@ -74,6 +74,17 @@ This v0.1 covers **Checkout API v71** only. Separate packages for Adyen **Payout
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `ADYEN_API_KEY` *(required, secret)* — Adyen API key (generated in Customer Area → Developers → API credentials)
+- `ADYEN_MERCHANT_ACCOUNT` *(required)* — Adyen merchant account code (appears in most request bodies)
+- `ADYEN_ENV` — test | live. Defaults to test.
+- `ADYEN_LIVE_URL_PREFIX` — Required when ADYEN_ENV=live. Your merchant-specific prefix, e.g. 1797a841fbb37ca7-AdyenDemo
+
+Issue credentials at the provider's developer portal: <https://docs.adyen.com>.
+
 ## License
 
 MIT

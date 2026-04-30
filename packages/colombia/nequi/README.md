@@ -66,6 +66,16 @@ Uses **OAuth2 client credentials** flow. The server obtains an access token usin
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `NEQUI_API_KEY` *(required, secret)* — API key for Nequi
+- `NEQUI_CLIENT_ID` *(required)* — OAuth2 client ID
+- `NEQUI_CLIENT_SECRET` *(required, secret)* — OAuth2 client secret
+
+Issue credentials at the provider's developer portal: <https://api.nequi.com.co>.
+
 ## License
 
 MIT

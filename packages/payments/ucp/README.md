@@ -89,6 +89,14 @@ AI Agent
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `UCP_API_KEY` *(required, secret)* — API key for ucp
+
+Issue credentials at the provider's developer portal: <https://developers.google.com/agents/commerce>.
+
 ## License
 
 MIT

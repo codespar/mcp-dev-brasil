@@ -77,6 +77,16 @@ TRANSAK_API_KEY=... TRANSAK_API_SECRET=... mcp-transak --http
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `TRANSAK_API_KEY` *(required)* — Transak partner API key (from partner dashboard). Used as partnerApiKey query param on public quote endpoint and bundled with api-secret to mint the access-token for Partner API calls.
+- `TRANSAK_API_SECRET` *(required, secret)* — Transak partner API secret. Sent as the api-secret header to endpoints that require server-to-server authentication (and used to mint access tokens for order endpoints).
+- `TRANSAK_ENV` — Environment selector: 'staging' (default) targets https://api-stg.transak.com; 'production' targets https://api.transak.com.
+
+Issue credentials at the provider's developer portal: <https://docs.transak.com>.
+
 ## License
 
 MIT

@@ -70,6 +70,14 @@ Uses **OAuth2 client credentials** flow with mTLS certificate. Register your app
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `NUBANK_CLIENT_ID` *(required, secret)* — API key/token for nubank
+
+Issue credentials at the provider's developer portal: <https://openfinancebrasil.org.br>.
+
 ## License
 
 MIT

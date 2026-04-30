@@ -62,6 +62,14 @@ Uses **Bearer token** authentication. Obtain your API key from the [FacturAPI Da
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `FACTURAPI_API_KEY` *(required, secret)* — API key for FacturAPI
+
+Issue credentials at the provider's developer portal: <https://docs.facturapi.io>.
+
 ## License
 
 MIT

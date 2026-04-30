@@ -68,6 +68,16 @@ Uses **Bearer token** authentication with the private key. The public key is use
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `WOMPI_PUBLIC_KEY` *(required)* — Public key for Wompi
+- `WOMPI_PRIVATE_KEY` *(required, secret)* — Private key for Wompi
+- `WOMPI_EVENTS_SECRET` *(secret)* — Events/webhook secret for signature validation
+
+Issue credentials at the provider's developer portal: <https://docs.wompi.co>.
+
 ## License
 
 MIT

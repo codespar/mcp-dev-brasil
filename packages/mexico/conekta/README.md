@@ -63,6 +63,14 @@ Uses **Basic authentication** with API key as username and empty password. API v
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `CONEKTA_API_KEY` *(required, secret)* — API key for Conekta
+
+Issue credentials at the provider's developer portal: <https://developers.conekta.com>.
+
 ## License
 
 MIT

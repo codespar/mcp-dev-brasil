@@ -54,6 +54,7 @@
     "logoFallback": "https://www.google.com/s2/favicons?domain=safrapay.com.br&sz=128",
     "sandbox": {
       "available": true
-    }
+    },
+    "docsUrl": "https://safrapay.com.br"
   }
 }

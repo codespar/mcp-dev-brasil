@@ -51,6 +51,12 @@ npx tsx packages/argentina/bcra/src/index.ts --http
 
 - [BCRA API Documentation](https://www.bcra.gob.ar/Catalogo/apis.asp)
 
+## Authentication
+
+BCRA's Estadísticas Cambiarias and Variables APIs are **public** — no API key, OAuth token, or signed request required. The MCP server makes plain HTTPS GETs to `api.bcra.gob.ar`.
+
+If your organization fronts the BCRA endpoints with a corporate gateway that requires auth, set the gateway's URL via the network egress policy and tunnel through it; the MCP server itself doesn't need credential plumbing.
+
 ---
 
 ## Enterprise

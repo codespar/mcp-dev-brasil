@@ -69,6 +69,15 @@ Uses **API key + session** authentication. The API key is sent with each request
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `COLPPY_API_KEY` *(required, secret)* — API key for Colppy
+- `COLPPY_COMPANY_ID` *(required)* — Company identifier
+
+Issue credentials at the provider's developer portal: <https://api.colppy.com/>.
+
 ## License
 
 MIT

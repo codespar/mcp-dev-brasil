@@ -70,6 +70,14 @@ Uses **Bearer token** authentication. Obtain your access token from the [Mercado
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `MERCADO_PAGO_ACCESS_TOKEN` *(required, secret)* — API key/token for mercado-pago
+
+Issue credentials at the provider's developer portal: <https://www.mercadopago.com.br/developers>.
+
 ## License
 
 MIT

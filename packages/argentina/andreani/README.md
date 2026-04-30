@@ -67,6 +67,16 @@ Uses **Bearer token** authentication. The server logs in with username/password 
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `ANDREANI_API_KEY` *(required, secret)* — API key for Andreani
+- `ANDREANI_USER` *(required)* — Username for Andreani
+- `ANDREANI_PASSWORD` *(required, secret)* — Password for Andreani
+
+Issue credentials at the provider's developer portal: <https://developers.andreani.com>.
+
 ## License
 
 MIT

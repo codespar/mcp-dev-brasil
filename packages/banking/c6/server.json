@@ -61,6 +61,7 @@
     "logoFallback": "https://www.google.com/s2/favicons?domain=c6bank.com.br&sz=128",
     "sandbox": {
       "available": false
-    }
+    },
+    "docsUrl": "https://www.c6bank.com.br/empresas"
   }
 }

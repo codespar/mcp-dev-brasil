@@ -68,6 +68,15 @@ Uses **Bearer token** authentication. Obtain your access token via the Tienda Nu
 
 Need governance, budget limits, and audit trails for agent payments? [CodeSpar Enterprise](https://codespar.dev/enterprise) adds policy engine, payment routing, and compliance templates on top of these MCP servers.
 
+## Authentication
+
+Set these environment variables before launching the server:
+
+- `TIENDANUBE_ACCESS_TOKEN` *(required, secret)* — Access token for Tienda Nube
+- `TIENDANUBE_STORE_ID` *(required)* — Store identifier
+
+Issue credentials at the provider's developer portal: <https://tiendanube.github.io>.
+
 ## License
 
 MIT
