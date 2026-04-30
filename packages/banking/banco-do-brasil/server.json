@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.codespar/banco-do-brasil",
+  "name": "io.github.codespar/mcp-banco-do-brasil",
   "description": "MCP server for Banco do Brasil — Brazil's top public bank. Pix, Cobrança (boleto), Conta-Corrente, and Arrecadação via BB's Developer Portal APIs (OAuth2 + mTLS).",
   "repository": {
     "url": "https://github.com/codespar/mcp-dev-brasil",
