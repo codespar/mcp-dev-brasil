@@ -1,0 +1,40 @@
+{
+  "name": "@codespar/mcp-coinbase-cdp",
+  "version": "0.1.0",
+  "description": "MCP server for Coinbase Developer Platform (CDP) — single package covering Trading, Wallets, and Payments. Auth uses ES256 JWT signed with an ECDSA P-256 private key minted at portal.cdp.coinbase.com.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "mcp-coinbase-cdp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "jose": "^5.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "coinbase",
+    "coinbase-cdp",
+    "cdp",
+    "crypto",
+    "trading",
+    "wallets",
+    "payments",
+    "swap",
+    "onchain",
+    "stablecoin",
+    "usdc",
+    "eth",
+    "base"
+  ],
+  "mcpName": "io.github.codespar/mcp-coinbase-cdp"
+}
