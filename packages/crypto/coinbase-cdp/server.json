@@ -1,0 +1,46 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-coinbase-cdp",
+  "description": "MCP server for Coinbase Developer Platform (CDP) — single package covering three product surfaces (Trading, Wallets, Payments) under one CDP key. ES256 JWT auth signed with an ECDSA P-256 private key minted at portal.cdp.coinbase.com; each request carries a fresh JWT bound to METHOD + path with a 2-minute exp.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam",
+    "source": "github",
+    "subfolder": "packages/crypto/coinbase-cdp"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-coinbase-cdp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "COINBASE_CDP_KEY_NAME",
+          "description": "CDP key id of the form organizations/<org>/apiKeys/<id>. Mint at https://portal.cdp.coinbase.com.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "COINBASE_CDP_PRIVATE_KEY",
+          "description": "PEM-encoded ECDSA P-256 private key downloaded once at mint time from https://portal.cdp.coinbase.com. Pass the full PEM including BEGIN/END lines.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "provider": {
+    "homepage": "https://www.coinbase.com/developer-platform",
+    "logoUrl": "https://logo.clearbit.com/coinbase.com",
+    "logoFallback": "https://www.google.com/s2/favicons?domain=coinbase.com&sz=128",
+    "docsUrl": "https://docs.cdp.coinbase.com",
+    "sandbox": {
+      "available": false
+    }
+  }
+}
