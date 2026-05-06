@@ -1,0 +1,39 @@
+{
+  "name": "io.github.codespar/mcp-coinbase",
+  "description": "Account balances, market data, place + cancel orders, transaction summary — Coinbase Advanced Trade API",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/crypto/coinbase"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-05-06",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-coinbase",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "COINBASE_ACCESS_KEY", "description": "Legacy HMAC API key from the Coinbase dashboard", "required": true },
+        { "name": "COINBASE_API_SECRET", "description": "API secret paired with the access key (HMAC-SHA256)", "required": true }
+      ]
+    }
+  ],
+  "tools": [
+    { "name": "list_accounts", "description": "List authenticated accounts with available + held balances per asset" },
+    { "name": "get_account", "description": "Get a specific account by UUID" },
+    { "name": "list_products", "description": "List tradable products (BTC-USD, ETH-USD, USDC-BRL, etc.)" },
+    { "name": "get_product", "description": "Get a single product's metadata + status" },
+    { "name": "get_best_bid_ask", "description": "Top-of-book bid + ask + size for one or more products" },
+    { "name": "get_market_trades", "description": "Recent trades for slippage estimation" },
+    { "name": "create_order", "description": "Place a market or limit order (idempotent via client_order_id)" },
+    { "name": "list_orders", "description": "List historical orders with status / time / product filters" },
+    { "name": "get_order", "description": "Get full status of a single order including fills" },
+    { "name": "cancel_orders", "description": "Cancel one or more open orders by order_id" },
+    { "name": "list_fills", "description": "List individual fills for fee accounting + reconciliation" },
+    { "name": "get_transaction_summary", "description": "30-day volume + maker/taker fee tier" },
+    { "name": "list_portfolios", "description": "List portfolios under the authenticated user" }
+  ]
+}
