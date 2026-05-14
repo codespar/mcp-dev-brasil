@@ -1,0 +1,34 @@
+{
+  "name": "io.github.codespar/mcp-caf",
+  "description": "Caf — BR identity + trust platform: KYC/KYB, face authentication + liveness, document validation + OCR, Trust Platform orchestration",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/identity/caf"
+  },
+  "version_detail": {
+    "version": "0.0.1-alpha",
+    "release_date": "2026-05-13",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-caf",
+      "version": "0.0.1-alpha",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "CAF_API_KEY", "description": "API key from the Caf dashboard", "required": true }
+      ]
+    }
+  ],
+  "tools": [
+    { "name": "person_check", "description": "KYC — validate CPF + return restrictions + risk indicators" },
+    { "name": "company_check", "description": "KYB — validate CNPJ + return corporate profile + QSA + sanctions" },
+    { "name": "face_authentication", "description": "Face authentication against a base image with liveness" },
+    { "name": "liveness_check", "description": "Passive liveness on a selfie" },
+    { "name": "document_check", "description": "OCR + authenticity check on RG / CNH / passport / proof of residence" },
+    { "name": "trust_platform_start", "description": "Start a Trust Platform onboarding flow with hosted URL" },
+    { "name": "trust_platform_get", "description": "Get Trust Platform flow status + step verdicts" },
+    { "name": "list_datasources", "description": "List datasources available to your Caf account" },
+    { "name": "get_check_result", "description": "Retrieve a previously-run check by ID" }
+  ]
+}
