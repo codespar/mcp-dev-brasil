@@ -1,0 +1,36 @@
+{
+  "name": "io.github.codespar/mcp-certta",
+  "description": "Certta — BR identity + signature: KYC/KYB, face match + liveness, document OCR, antifraud score, ICP-Brasil + electronic signature, orchestrated onboarding pipelines",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/identity/certta"
+  },
+  "version_detail": {
+    "version": "0.0.1-alpha",
+    "release_date": "2026-05-13",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-certta",
+      "version": "0.0.1-alpha",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "CERTTA_API_KEY", "description": "API key from the Certta dashboard", "required": true }
+      ]
+    }
+  ],
+  "tools": [
+    { "name": "kyc_lookup_cpf", "description": "Validate CPF against Receita Federal + SPC/Serasa" },
+    { "name": "kyb_lookup_cnpj", "description": "Validate CNPJ + return corporate profile + QSA" },
+    { "name": "biometrics_face_match", "description": "Compare selfie against document photo with liveness" },
+    { "name": "biometrics_liveness", "description": "Passive liveness check on a selfie" },
+    { "name": "documents_ocr", "description": "OCR RG / CNH / CRLV / proof of residence / passport" },
+    { "name": "antifraud_score", "description": "Compute antifraud risk score from KYC + biometrics + device signals" },
+    { "name": "signature_icp_create", "description": "Create ICP-Brasil digital signature envelope" },
+    { "name": "signature_electronic_create", "description": "Create GoCertta electronic signature envelope" },
+    { "name": "signature_get_envelope", "description": "Get signature envelope status + signer responses" },
+    { "name": "onboarding_process_create", "description": "Kick off orchestrated KYC + biometrics + signature pipeline" },
+    { "name": "onboarding_process_get", "description": "Get status of an onboarding process" }
+  ]
+}
