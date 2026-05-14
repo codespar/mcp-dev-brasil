@@ -2,8 +2,6 @@
 
 MCP server for **Iniciador** — Open Finance Brasil PISP (Pix payment initiation aggregator). Iniciador holds the ICP-Brasil certificate and orchestrates DCR with each Brazilian bank for instant Pix-out flows.
 
-> ⚠️ **ALPHA SCAFFOLD.** The package + `server.json` reserve the catalog slot. Today's tool surface is a single `health_check` placeholder. The real toolset (`initiate_pix`, `get_payment_status`, `list_payments`, `schedule_recurring_pix`) lands in a follow-on PR.
-
 ## Quick Start
 
 ### Claude Desktop
@@ -17,8 +15,7 @@ Add to your `claude_desktop_config.json`:
       "command": "npx",
       "args": ["@codespar/mcp-iniciador"],
       "env": {
-        "INICIADOR_CLIENT_ID": "your-client-id",
-        "INICIADOR_CLIENT_SECRET": "your-client-secret"
+        "INICIADOR_API_KEY": "your-api-key"
       }
     }
   }
@@ -29,15 +26,40 @@ Add to your `claude_desktop_config.json`:
 
 Same config in `.cursor/mcp.json`.
 
-## Tools (1)
+## Tools (9)
 
-| Tool | Description |
+### Institutions
+
+| Tool | Iniciador endpoint | Notes |
+|---|---|---|
+| `list_institutions` | `GET /institutions` | Brazilian banks supported for Pix initiation |
+
+### Consents
+
+| Tool | Iniciador endpoint | Notes |
+|---|---|---|
+| `create_consent` | `POST /consents` | Payment consent for the payer to authorize at their bank |
+| `get_consent` | `GET /consents/{id}` | Current authorization status |
+| `revoke_consent` | `DELETE /consents/{id}` | Revoke before exercise |
+
+### Payments
+
+| Tool | Iniciador endpoint | Notes |
+|---|---|---|
+| `create_payment` | `POST /payments` | Initiate Pix once consent is authorized |
+| `get_payment` | `GET /payments/{id}` | Status / E2E id / rejection reason |
+| `list_payments` | `GET /payments` | Filter by date range / status |
+| `cancel_payment` | `POST /payments/{id}/cancel` | Best-effort cancel before settlement |
+
+### Helpers
+
+| Tool | Notes |
 |---|---|
-| `health_check` | Verifies the server is running and creds are set. Returns `configured` or `missing-creds`. |
+| `get_authorization_url` | Client-side builder for the OFB authorization URL (consent id + ISPB + redirect) |
 
 ## Authentication
 
-Iniciador uses OAuth2 client-credentials. The Pix-out call itself is signed end-to-end with the consumer's bank-issued consent token.
+This server uses Iniciador's API key auth (`X-API-KEY` header). The Pix-out call itself is signed end-to-end with the consumer's bank-issued consent token, which Iniciador's backend stitches in after the payer authorizes the consent at their bank. OAuth2 client-credentials is required for some flows and lands when consent + bank-issued token plumbing is wired end-to-end.
 
 Issue credentials during Iniciador onboarding:
 
@@ -52,9 +74,8 @@ Sandbox endpoint: `https://sandbox.iniciador.com.br`. Override via `INICIADOR_AP
 
 | Variable | Required | Description |
 |---|---|---|
-| `INICIADOR_CLIENT_ID` | yes | OAuth2 client ID from Iniciador onboarding |
-| `INICIADOR_CLIENT_SECRET` | yes | OAuth2 client secret |
-| `INICIADOR_API_BASE` | no | Override API base URL (default: production) |
+| `INICIADOR_API_KEY` | yes | API key from Iniciador onboarding |
+| `INICIADOR_API_BASE` | no | Override API base URL (default `https://api.iniciador.com.br`) |
 
 ## Iniciador vs Pluggy vs Belvo
 

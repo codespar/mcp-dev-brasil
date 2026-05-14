@@ -1,0 +1,34 @@
+{
+  "name": "io.github.codespar/mcp-iniciador",
+  "description": "Open Finance BR PISP — Pix payment initiation. Operator triggers a payer-to-payee transfer through Iniciador's PISP license; payer authorizes once at their bank's app and the payment fires from the payer's own bank account. Alternative to merchant-acquirer rails (Asaas / Mercado Pago) when the payer's bank should be the source of funds.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/payments/iniciador"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-05-04",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-iniciador",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "INICIADOR_API_KEY", "description": "API key issued from the Iniciador dashboard — sent as X-API-KEY header", "required": true }
+      ]
+    }
+  ],
+  "tools": [
+    { "name": "list_institutions", "description": "List Open Finance institutions enabled for payment initiation through Iniciador" },
+    { "name": "create_consent", "description": "Create a payment-initiation consent scoped to institution + amount + creditor" },
+    { "name": "get_consent", "description": "Get a consent with status + authorizationUrl + expiresAt" },
+    { "name": "revoke_consent", "description": "Revoke a consent before it's consumed" },
+    { "name": "get_authorization_url", "description": "Re-fetch the authorization URL for an existing consent" },
+    { "name": "create_payment", "description": "Trigger the Pix payment against an AUTHORIZED consent" },
+    { "name": "get_payment", "description": "Get a payment with status + endToEndId + settledAt" },
+    { "name": "list_payments", "description": "List payments with status / institution / date-range filters" },
+    { "name": "cancel_payment", "description": "Cancel a PENDING or scheduled payment before settlement" }
+  ]
+}

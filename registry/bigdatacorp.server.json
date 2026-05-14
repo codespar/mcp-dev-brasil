@@ -1,0 +1,36 @@
+{
+  "name": "io.github.codespar/mcp-bigdatacorp",
+  "description": "BR data enrichment + KYC. CPF / CNPJ / vehicle / property / antifraud datasets — look up a person by CPF and get name, DOB, address, employment, score, sanctions, social signals. Same for companies via CNPJ. Standard rail in BR e-commerce + lending agents for KYC, AML, fraud scoring. Catalog-row-only on this drop — package skeleton future work.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/identity/bigdatacorp"
+  },
+  "version_detail": {
+    "version": "0.0.1-alpha",
+    "release_date": "2026-05-04",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-bigdatacorp",
+      "version": "0.0.1-alpha",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "BIGDATACORP_ACCESS_TOKEN", "description": "AccessToken header value from the BigDataCorp dashboard", "required": true },
+        { "name": "BIGDATACORP_TOKEN_ID", "description": "TokenId header paired with the access token", "required": true }
+      ]
+    }
+  ],
+  "tools": [
+    { "name": "persons_lookup", "description": "CPF lookup — name, DOB, mother's name, addresses, contacts, deceased flag" },
+    { "name": "companies_lookup", "description": "CNPJ lookup — razão social, founding date, capital, partners, address, CNAE" },
+    { "name": "vehicles_lookup", "description": "Vehicle lookup by placa / chassis / RENAVAM — make, model, ownership, restrictions" },
+    { "name": "properties_lookup", "description": "Real-estate lookup by address or registration — owner history + value estimate" },
+    { "name": "financial_data", "description": "Credit + financial profile — income, score, declared assets, banking, default history" },
+    { "name": "employment_data", "description": "Employment profile — current employer, history, monthly income, category" },
+    { "name": "sanctions_check", "description": "OFAC / UN / EU / BR PEP / court records / INSS / IBAMA screening" },
+    { "name": "social_signals", "description": "Instagram / LinkedIn / Twitter / Facebook presence — fraud-scoring signal" },
+    { "name": "antifraud_score", "description": "Composite fraud risk score (0-1000) with decision recommendation" },
+    { "name": "address_validation", "description": "Address normalization + validation against CORREIOS + IBGE with geocode" }
+  ]
+}

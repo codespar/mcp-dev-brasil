@@ -1,6 +1,6 @@
 {
   "name": "@codespar/mcp-pluggy",
-  "version": "0.0.1-alpha",
+  "version": "0.1.0",
   "description": "MCP server for Pluggy — Open Finance Brasil aggregator (ITP/TPP)",
   "type": "module",
   "main": "dist/index.js",

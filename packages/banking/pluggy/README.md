@@ -2,8 +2,6 @@
 
 MCP server for **Pluggy** — Open Finance Brasil aggregator (ITP/TPP). Pluggy holds the ICP-Brasil certificate and runs Dynamic Client Registration with each Brazilian bank, so you integrate against one API instead of N.
 
-> ⚠️ **ALPHA SCAFFOLD.** The package + `server.json` reserve the catalog slot and document the env contract. Today's tool surface is a single `health_check` placeholder. The real toolset (list_connectors, create_item, list_accounts, list_transactions, payments_initiation) lands in a follow-on PR.
-
 ## Quick Start
 
 ### Claude Desktop
@@ -29,11 +27,48 @@ Add to your `claude_desktop_config.json`:
 
 Same config in `.cursor/mcp.json` or VS Code's MCP integration.
 
-## Tools (1)
+## Tools (16)
 
-| Tool | Description |
-|---|---|
-| `health_check` | Verifies the server is running and creds are set. Returns `configured` or `missing-creds`. |
+### Connectors + categories
+
+| Tool | Pluggy endpoint | Notes |
+|---|---|---|
+| `list_connectors` | `GET /connectors` | Filter by name / types / countries / sandbox |
+| `get_connector` | `GET /connectors/{id}` | Single connector definition |
+| `list_categories` | `GET /categories` | Transaction categorization taxonomy |
+
+### Connect token
+
+| Tool | Pluggy endpoint | Notes |
+|---|---|---|
+| `create_connect_token` | `POST /connect_token` | Embed Pluggy Connect widget on the client |
+
+### Items (bank connections)
+
+| Tool | Pluggy endpoint | Notes |
+|---|---|---|
+| `create_item` | `POST /items` | New bank connection from credentials |
+| `list_items` | `GET /items` | Lists existing connections |
+| `get_item` | `GET /items/{id}` | Single connection |
+| `update_item` | `PATCH /items/{id}` | Refresh credentials / trigger sync |
+| `delete_item` | `DELETE /items/{id}` | Revoke connection |
+
+### Accounts + transactions + identity
+
+| Tool | Pluggy endpoint | Notes |
+|---|---|---|
+| `list_accounts` | `GET /accounts?itemId=...` | Checking / savings / credit / investment |
+| `get_account` | `GET /accounts/{id}` | Single account |
+| `list_transactions` | `GET /transactions?accountId=...` | Date-range filter |
+| `get_transaction` | `GET /transactions/{id}` | Single transaction |
+| `list_identities` | `GET /identity?itemId=...` | Legal name + document + address |
+
+### Payments (PISP)
+
+| Tool | Pluggy endpoint | Notes |
+|---|---|---|
+| `create_payment_intent` | `POST /payments/intents` | Initiate a Pluggy Payments intent |
+| `get_payment_intent` | `GET /payments/intents/{id}` | Poll status |
 
 ## Authentication
 
@@ -57,6 +92,7 @@ Pluggy provides sandbox connectors with synthetic accounts and transactions. The
 |---|---|---|
 | `PLUGGY_CLIENT_ID` | yes | Client ID from the Pluggy dashboard |
 | `PLUGGY_CLIENT_SECRET` | yes | Client secret from the Pluggy dashboard |
+| `PLUGGY_API_BASE` | no | Override API base (default `https://api.pluggy.ai`) |
 
 ## Why use Pluggy via CodeSpar
 
