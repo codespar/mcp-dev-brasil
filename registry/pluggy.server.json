@@ -1,0 +1,42 @@
+{
+  "name": "io.github.codespar/mcp-pluggy",
+  "description": "Open Finance BR aggregator (TPP) — single API across all BR banks. Account discovery, balances, transactions, identity, investments, loans, and Pix payment initiation. Pluggy holds the ICP-Brasil cert + does DCR with each bank.",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/banking/pluggy"
+  },
+  "version_detail": {
+    "version": "0.1.0",
+    "release_date": "2026-05-04",
+    "is_latest": true
+  },
+  "packages": [
+    {
+      "registry_name": "npm",
+      "name": "@codespar/mcp-pluggy",
+      "version": "0.1.0",
+      "runtime": "node",
+      "environment_variables": [
+        { "name": "PLUGGY_CLIENT_ID", "description": "Client id from the Pluggy dashboard", "required": true },
+        { "name": "PLUGGY_CLIENT_SECRET", "description": "Client secret paired with the client id — used to mint short-lived apiKey via POST /auth", "required": true }
+      ]
+    }
+  ],
+  "tools": [
+    { "name": "list_connectors", "description": "List supported BR financial institutions (banks, fintechs, investment platforms)" },
+    { "name": "create_connect_token", "description": "Short-lived token to bootstrap the Pluggy Connect widget for end-user authorization" },
+    { "name": "create_item", "description": "Create a new bank connection (item) by linking a Pluggy user to an institution" },
+    { "name": "list_items", "description": "List all items for the authenticated client" },
+    { "name": "get_item", "description": "Get a single item with status + execution detail" },
+    { "name": "refresh_item", "description": "Trigger a refresh of an item — re-syncs accounts, transactions, identities" },
+    { "name": "delete_item", "description": "Delete an item and revoke its Open Finance consent" },
+    { "name": "list_accounts", "description": "List accounts under an item — one per bank account / credit card / investment portfolio" },
+    { "name": "get_account", "description": "Get a single account with balance + bankData" },
+    { "name": "list_transactions", "description": "List transactions for an account with date range + cursor pagination" },
+    { "name": "list_identities", "description": "List identity records — name, CPF/CNPJ, addresses, phones, emails" },
+    { "name": "list_investments", "description": "List investment positions (Tesouro, CDB, LCI, fundos, equities, crypto)" },
+    { "name": "list_loans", "description": "List loan + credit positions (personal loans, financing, consignado)" },
+    { "name": "create_payment_intent", "description": "Open Finance Pix payment initiation — payer authorizes at their bank's app" },
+    { "name": "get_payment_intent", "description": "Get a payment intent with status + endToEndId + authorizationUrl" },
+    { "name": "list_webhooks", "description": "List configured webhooks for item-status + payment-completed events" }
+  ]
+}
