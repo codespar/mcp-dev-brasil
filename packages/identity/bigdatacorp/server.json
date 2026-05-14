@@ -1,0 +1,50 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-bigdatacorp",
+  "description": "MCP server for BigDataCorp — Brazilian data enrichment + KYC. CPF / CNPJ / vehicle / property / antifraud datasets. Paired-header auth (AccessToken + TokenId).",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam",
+    "source": "github",
+    "subfolder": "packages/identity/bigdatacorp"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-bigdatacorp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BIGDATACORP_ACCESS_TOKEN",
+          "description": "AccessToken header value from the BigDataCorp dashboard",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BIGDATACORP_TOKEN_ID",
+          "description": "TokenId header paired with the access token",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BIGDATACORP_API_BASE",
+          "description": "API base URL — defaults to BigDataCorp production. Override for sandbox.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ],
+  "provider": {
+    "homepage": "https://bigdatacorp.com.br",
+    "logoUrl": "https://logo.clearbit.com/bigdatacorp.com.br",
+    "logoFallback": "https://www.google.com/s2/favicons?domain=bigdatacorp.com.br&sz=128",
+    "docsUrl": "https://plataforma.bigdatacorp.com.br"
+  }
+}

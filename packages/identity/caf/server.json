@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.codespar/mcp-caf",
+  "description": "MCP server for Caf — Brazilian identity + Trust Platform (KYC/KYB, face authentication + liveness, document validation + OCR, orchestrated onboarding).",
+  "repository": {
+    "url": "https://github.com/codespar/mcp-dev-latam",
+    "source": "github",
+    "subfolder": "packages/identity/caf"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@codespar/mcp-caf",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "CAF_API_KEY",
+          "description": "API key from the Caf dashboard",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "CAF_API_BASE",
+          "description": "API base URL — defaults to Caf production. Override for sandbox.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ],
+  "provider": {
+    "homepage": "https://caf.io",
+    "logoUrl": "https://logo.clearbit.com/caf.io",
+    "logoFallback": "https://www.google.com/s2/favicons?domain=caf.io&sz=128",
+    "docsUrl": "https://docs.caf.io",
+    "sandbox": {
+      "available": true,
+      "url": "https://api-sandbox.caf.io"
+    }
+  }
+}
