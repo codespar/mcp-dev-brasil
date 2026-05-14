@@ -5,7 +5,7 @@
     "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/identity/bigdatacorp"
   },
   "version_detail": {
-    "version": "0.0.1-alpha",
+    "version": "0.1.0",
     "release_date": "2026-05-04",
     "is_latest": true
   },
@@ -13,7 +13,7 @@
     {
       "registry_name": "npm",
       "name": "@codespar/mcp-bigdatacorp",
-      "version": "0.0.1-alpha",
+      "version": "0.1.0",
       "runtime": "node",
       "environment_variables": [
         { "name": "BIGDATACORP_ACCESS_TOKEN", "description": "AccessToken header value from the BigDataCorp dashboard", "required": true },

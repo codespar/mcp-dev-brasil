@@ -1,0 +1,36 @@
+{
+  "name": "@codespar/mcp-certta",
+  "version": "0.1.0",
+  "description": "MCP server for Certta — Brazilian identity + signature platform (KYC/KYB, biometrics, OCR, ICP-Brasil + electronic signature, onboarding pipelines)",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-certta": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "certta",
+    "kyc",
+    "kyb",
+    "biometrics",
+    "icp-brasil",
+    "signature",
+    "brazil",
+    "onboarding"
+  ]
+}

@@ -5,7 +5,7 @@
     "url": "https://github.com/codespar/mcp-dev-latam/tree/main/packages/identity/certta"
   },
   "version_detail": {
-    "version": "0.0.1-alpha",
+    "version": "0.1.0",
     "release_date": "2026-05-13",
     "is_latest": true
   },
@@ -13,7 +13,7 @@
     {
       "registry_name": "npm",
       "name": "@codespar/mcp-certta",
-      "version": "0.0.1-alpha",
+      "version": "0.1.0",
       "runtime": "node",
       "environment_variables": [
         { "name": "CERTTA_API_KEY", "description": "API key from the Certta dashboard", "required": true }
