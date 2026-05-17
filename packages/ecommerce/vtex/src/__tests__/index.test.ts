@@ -34,9 +34,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-vtex", () => {
-  it("should register 15 tools", async () => {
+  it("should register 33 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(15);
+    expect(result.tools).toHaveLength(33);
   });
 
   it("should call correct API endpoint for get_order", async () => {

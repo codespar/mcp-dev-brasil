@@ -33,9 +33,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-mercado-bitcoin", () => {
-  it("should register 10 tools", async () => {
+  it("should register 20 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(10);
+    expect(result.tools).toHaveLength(20);
   });
 
   it("should call correct API endpoint for get_ticker", async () => {

@@ -32,9 +32,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-pagar-me", () => {
-  it("should register 10 tools", async () => {
+  it("should register 22 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(10);
+    expect(result.tools).toHaveLength(22);
   });
 
   it("should call correct API endpoint for get_order", async () => {
