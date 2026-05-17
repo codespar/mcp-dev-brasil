@@ -45,14 +45,53 @@ import {
 
 const DEMO_MODE = process.argv.includes("--demo") || process.env.MCP_DEMO === "true";
 
+let createNfseCallCounter = 0;
+
 const DEMO_RESPONSES: Record<string, unknown> = {
   create_nfe: { id: "nfe_demo_001", status: "autorizada", numero: 1234, serie: 1, chave: "35260412345678000190550010000012341000000001", valorTotal: 150.00, dataEmissao: "2026-04-12T10:30:00Z", xml_url: "https://api.nuvemfiscal.com.br/demo/nfe.xml", pdf_url: "https://api.nuvemfiscal.com.br/demo/danfe.pdf" },
   consult_cnpj: { cnpj: "12345678000190", razaoSocial: "Demo Comércio LTDA", nomeFantasia: "Demo Shop", situacao: "ATIVA", uf: "SP" },
   get_nfe: { id: "nfe_demo_001", status: "autorizada", numero: 1234, serie: 1, chave: "35260412345678000190550010000012341000000001", valorTotal: 150.00 },
   cancel_nfe: { id: "nfe_demo_001", status: "cancelada", protocolo: "135260000000001" },
-  create_nfse: { id: "nfse_demo_001", status: "autorizada", numero: 567, valorServico: 500.00, dataEmissao: "2026-04-12T10:30:00Z" },
   consult_cep: { cep: "01001000", logradouro: "Praça da Sé", bairro: "Sé", cidade: "São Paulo", uf: "SP" },
 };
+
+/**
+ * Stateful demo handler for `create_nfse`.
+ *
+ * Issues a distinct fixture id per call within one process (`nfse_demo_001`,
+ * `nfse_demo_002`, ...), and echoes input `servico.codigo`, `valor`, and
+ * `servico.descricao` back into the response. `pdf_url` is templated from
+ * the fixture id.
+ *
+ * Exported for unit-test access; not part of the MCP wire surface.
+ */
+export function createNfseDemoResponse(args: any): {
+  id: string;
+  status: string;
+  numero: number;
+  valorServico: number;
+  dataEmissao: string;
+  codigoServico: string;
+  descricaoServico: string;
+  pdf_url: string;
+} {
+  createNfseCallCounter += 1;
+  const padded = String(createNfseCallCounter).padStart(3, "0");
+  const id = "nfse_demo_" + padded;
+  const codigoServico: string = args?.servico?.codigo ?? "1.05";
+  const valorServico: number = args?.valor ?? 500.00;
+  const descricaoServico: string = args?.servico?.descricao ?? "Demo service";
+  return {
+    id,
+    status: "autorizada",
+    numero: 567 + createNfseCallCounter,
+    valorServico,
+    dataEmissao: new Date().toISOString(),
+    codigoServico,
+    descricaoServico,
+    pdf_url: "https://api.nuvemfiscal.com.br/demo/" + id + ".pdf",
+  };
+}
 
 const CLIENT_ID = process.env.NUVEM_FISCAL_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.NUVEM_FISCAL_CLIENT_SECRET || "";
@@ -426,6 +465,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (DEMO_MODE) {
+    if (name === "create_nfse") {
+      return { content: [{ type: "text", text: JSON.stringify(createNfseDemoResponse(args), null, 2) }] };
+    }
     return { content: [{ type: "text", text: JSON.stringify(DEMO_RESPONSES[name] || { demo: true, tool: name }, null, 2) }] };
   }
 
