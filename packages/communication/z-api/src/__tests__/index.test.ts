@@ -71,9 +71,9 @@ describe("mcp-z-api", () => {
   ];
 
   describe("ListTools", () => {
-    it("should register exactly 20 tools", async () => {
+    it("should register exactly 27 tools", async () => {
       const result = await listToolsHandler();
-      expect(result.tools).toHaveLength(20);
+      expect(result.tools).toHaveLength(27);
     });
 
     it("should include all expected tool names", async () => {

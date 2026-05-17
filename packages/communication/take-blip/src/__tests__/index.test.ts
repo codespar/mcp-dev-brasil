@@ -33,9 +33,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-take-blip", () => {
-  it("should register 8 tools", async () => {
+  it("should register 18 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(8);
+    expect(result.tools).toHaveLength(18);
   });
 
   it("should call correct API endpoint for get_contacts", async () => {

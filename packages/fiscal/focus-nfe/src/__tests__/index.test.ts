@@ -32,9 +32,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-focus-nfe", () => {
-  it("should register 8 tools", async () => {
+  it("should register 19 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(8);
+    expect(result.tools).toHaveLength(19);
   });
 
   it("should call correct API endpoint for get_nfe", async () => {

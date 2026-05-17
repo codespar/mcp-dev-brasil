@@ -32,9 +32,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-stark-bank", () => {
-  it("should register 15 tools", async () => {
+  it("should register 27 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(15);
+    expect(result.tools).toHaveLength(27);
   });
 
   it("should call correct API endpoint for get_balance", async () => {

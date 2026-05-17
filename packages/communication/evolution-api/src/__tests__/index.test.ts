@@ -33,9 +33,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-evolution-api", () => {
-  it("should register 15 tools", async () => {
+  it("should register 25 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(15);
+    expect(result.tools).toHaveLength(25);
   });
 
   it("should call correct API endpoint for send_text", async () => {

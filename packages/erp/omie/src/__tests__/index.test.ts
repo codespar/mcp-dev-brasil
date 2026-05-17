@@ -33,9 +33,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-omie", () => {
-  it("should register 15 tools", async () => {
+  it("should register 30 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(15);
+    expect(result.tools).toHaveLength(30);
   });
 
   it("should call correct API endpoint for list_customers", async () => {

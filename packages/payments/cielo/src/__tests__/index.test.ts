@@ -33,9 +33,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-cielo", () => {
-  it("should register 13 tools", async () => {
+  it("should register 22 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(13);
+    expect(result.tools).toHaveLength(22);
   });
 
   it("should call correct API endpoint for create_sale", async () => {

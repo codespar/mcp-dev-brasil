@@ -32,9 +32,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-circle", () => {
-  it("should register 10 tools", async () => {
+  it("should register 23 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(10);
+    expect(result.tools).toHaveLength(23);
   });
 
   it("should call correct API endpoint for create_wallet", async () => {
@@ -43,7 +43,7 @@ describe("mcp-circle", () => {
     await callToolHandler({ params: { name: "create_wallet", arguments: { idempotencyKey: "key1" } } });
 
     const [url, opts] = mockFetch.mock.calls[0];
-    expect(url).toContain("api.circle.com/v1/wallets");
+    expect(url).toContain("api.circle.com/v1/businessAccount/wallets");
     expect(opts.method).toBe("POST");
     expect(opts.headers.Authorization).toBe("Bearer test-key");
   });
