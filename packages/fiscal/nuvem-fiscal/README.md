@@ -88,6 +88,10 @@ Nuvem Fiscal uses OAuth2 client credentials. The server automatically manages to
 
 Nuvem Fiscal supports a homologation environment (ambiente=2) for testing fiscal document emission without affecting real tax systems.
 
+## Demo Mode
+
+Set `MCP_DEMO=true` (or pass `--demo`) to run the server without contacting the Nuvem Fiscal API. In `MCP_DEMO=true` mode, `create_nfse` issues distinct fixture IDs per call within one process and echoes input `servico.codigo`, `valor`, and `servico.descricao` into the response. `pdf_url` is templated from the fixture id. Other demo tools return static fixtures and are useful for offline walkthroughs and integration smoke tests.
+
 ### Get your credentials
 
 1. Go to [Nuvem Fiscal Developer Portal](https://dev.nuvemfiscal.com.br)
