@@ -34,9 +34,9 @@ beforeEach(async () => {
 });
 
 describe("mcp-nuvem-fiscal", () => {
-  it("should register 15 tools", async () => {
+  it("should register 24 tools", async () => {
     const result = await listToolsHandler();
-    expect(result.tools).toHaveLength(15);
+    expect(result.tools).toHaveLength(24);
   });
 
   it("should call correct API endpoint for consult_cnpj", async () => {

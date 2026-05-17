@@ -33,7 +33,11 @@ jobs:
       - name: Scan for hardcoded secrets
         run: |
           echo "Scanning for hardcoded API keys..."
-          if grep -rn "sk_live_\|AKIA[A-Z0-9]\{16\}" --include="*.ts" packages/ 2>/dev/null | grep -v node_modules | grep -v ".env"; then
+          # Real Stripe live keys are sk_live_ followed by 20+ alphanumeric chars.
+          # Documentation placeholders like "sk_live_..." stop right after the
+          # underscore and must not trip the scan. The AWS pattern (AKIA + 16
+          # uppercase/digit chars) is already shape-specific enough on its own.
+          if grep -rnE "sk_live_[A-Za-z0-9]{20,}|AKIA[A-Z0-9]{16}" --include="*.ts" packages/ 2>/dev/null | grep -v node_modules | grep -v ".env"; then
             echo "::error::Hardcoded secret found in source code"
             exit 1
           fi
