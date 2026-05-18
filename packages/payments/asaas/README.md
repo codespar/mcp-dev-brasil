@@ -55,7 +55,7 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 
 | Tool | Purpose |
 |---|---|
-| `create_payment` | Create a payment in Asaas (Pix, boleto, or credit card) |
+| `create_payment` | Create a payment in Asaas (Pix, boleto, or credit card); pass `installments` (>=2) with `billingType: CREDIT_CARD` to split into equal monthly installments |
 | `get_payment` | Get payment details by ID |
 | `list_payments` | List payments with optional filters |
 | `get_pix_qrcode` | Get Pix QR code for a payment (returns payload and image) |
@@ -68,7 +68,7 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 | `cancel_subscription` | Cancel a subscription by ID |
 | `get_webhook_events` | List webhook events (payment confirmations, transfers, etc.) |
 | `create_subaccount` | Create a subaccount for payment splitting |
-| `get_installments` | Get installment details for a payment |
+| `get_installments` | Get installment details for an existing payment by `id`, OR preview a hypothetical schedule by passing `value` + `installments` without an `id` |
 | `create_transfer` | Create a bank transfer (Pix out or TED) |
 | `create_pix_qrcode` | Generate a static PIX QR code for receiving payments |
 | `list_transfers` | List transfers with optional filters |
@@ -99,8 +99,33 @@ Asaas provides a full sandbox environment at `sandbox.asaas.com`. Set `ASAAS_SAN
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ASAAS_API_KEY` | Yes | API key from Asaas dashboard |
+| `ASAAS_API_KEY` | Yes (unless in demo mode) | API key from Asaas dashboard |
 | `ASAAS_SANDBOX` | No | Set to `"true"` for sandbox mode |
+| `MCP_DEMO` | No | Set to `"true"` (equivalent to passing `--demo` on the command line) for stateful demo-mode fixtures — no API key required |
+
+## Demo mode
+
+Pass the `--demo` flag (or set `MCP_DEMO=true`) to make every tool
+return deterministic fixture responses instead of calling the real
+Asaas API. Useful for building and testing agents without burning
+sandbox credentials.
+
+The demo handlers for `create_payment` and `get_installments` are
+stateful: `create_payment` issues distinct ids per call
+(`pay_demo_001`, `pay_demo_002`, ...) and, when called with
+`billingType: CREDIT_CARD` + `installments >= 2` + `value > 0`,
+records the installment schedule in an in-process ledger. A
+subsequent `get_installments({ id })` against that id echoes the
+recorded schedule back. `get_installments` also supports a preview
+path — pass `value` + `installments` without an `id` and it returns
+a hypothetical schedule (`status: "PREVIEW"`, `preview: true`)
+without creating a payment. Other tools return static fixture
+payloads.
+
+```bash
+# Start the server in demo mode (no key required):
+npx -y @codespar/mcp-asaas --demo
+```
 
 ## Roadmap
 

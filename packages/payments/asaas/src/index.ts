@@ -57,8 +57,22 @@ function validationError(msg: string) {
 
 const DEMO_MODE = process.argv.includes("--demo") || process.env.MCP_DEMO === "true";
 
+let createPaymentCallCounter = 0;
+const installmentLedger = new Map<string, { value: number; installments: number; installmentValue: number; dueDate: string }>();
+
+/**
+ * Reset the in-process demo state (call counter + installment ledger).
+ *
+ * Exported for unit-test isolation — call from `beforeEach` so test
+ * order doesn't affect fixture ids or ledger contents. Not part of
+ * the MCP wire surface; no production caller invokes it.
+ */
+export function resetDemoState(): void {
+  createPaymentCallCounter = 0;
+  installmentLedger.clear();
+}
+
 const DEMO_RESPONSES: Record<string, unknown> = {
-  create_payment: { id: "pay_demo_001", status: "PENDING", billingType: "PIX", value: 150.00, customer: "cus_demo_001", dueDate: "2026-04-15", invoiceUrl: "https://sandbox.asaas.com/i/demo001" },
   get_pix_qrcode: { encodedImage: "data:image/png;base64,iVBOR...(truncated)", payload: "00020126580014br.gov.bcb.pix0136demo-pix-key", expirationDate: "2026-04-15T23:59:59Z" },
   create_customer: { id: "cus_demo_001", name: "João Silva", email: "joao@demo.com", cpfCnpj: "12345678901" },
   get_balance: { balance: 15420.50, statistics: { income: 28500.00, expense: 13079.50 } },
@@ -69,6 +83,124 @@ const DEMO_RESPONSES: Record<string, unknown> = {
   create_transfer: { id: "txn_demo_001", value: 500.00, status: "PENDING", pixAddressKey: "demo@pix.com" },
   list_transfers: { totalCount: 1, data: [{ id: "txn_demo_001", value: 500.00, status: "DONE" }] },
 };
+
+/**
+ * Stateful demo handler for `create_payment`.
+ *
+ * Issues a distinct fixture id per call within one process. When
+ * `billingType: CREDIT_CARD` is paired with `installments`, the response
+ * includes `installmentValue = value / installments` (rounded to two
+ * decimals) and the same `installments` count, and the call is recorded
+ * in `installmentLedger` so a subsequent `get_installments` call against
+ * the same id can echo back the matching schedule.
+ *
+ * Exported for unit-test access; not part of the MCP wire surface.
+ */
+export function createPaymentDemoResponse(args: any): Record<string, unknown> {
+  createPaymentCallCounter += 1;
+  const padded = String(createPaymentCallCounter).padStart(3, "0");
+  const id = "pay_demo_" + padded;
+  const billingType: string = args?.billingType ?? "PIX";
+  const value: number = typeof args?.value === "number" ? args.value : 150.00;
+  const customer: string = args?.customer ?? "cus_demo_001";
+  const dueDate: string = args?.dueDate ?? "2026-04-15";
+  // Accept any finite number >= 2 and floor it (so 6.5 → 6). Reject
+  // NaN, Infinity, non-numbers, zero, and negatives — those all fall
+  // through to the single-payment branch silently rather than crashing
+  // the demo.
+  const rawInstallments: unknown = args?.installments;
+  const installments: number | undefined =
+    typeof rawInstallments === "number" && Number.isFinite(rawInstallments) && rawInstallments >= 2
+      ? Math.floor(rawInstallments)
+      : undefined;
+
+  const base: Record<string, unknown> = {
+    id,
+    status: "PENDING",
+    billingType,
+    value,
+    customer,
+    dueDate,
+    invoiceUrl: "https://sandbox.asaas.com/i/" + id,
+  };
+
+  if (billingType === "CREDIT_CARD" && installments && value > 0) {
+    const installmentValue = Math.round((value / installments) * 100) / 100;
+    installmentLedger.set(id, { value, installments, installmentValue, dueDate });
+    base.installments = installments;
+    base.installmentValue = installmentValue;
+  }
+
+  return base;
+}
+
+/**
+ * Stateful demo handler for `get_installments`.
+ *
+ * Three paths, evaluated in order:
+ *   1. `id` resolves in the in-process ledger (registered by a prior
+ *      `createPaymentDemoResponse` call with installment intent) →
+ *      echoes back the recorded schedule (one entry per installment,
+ *      evenly priced).
+ *   2. Otherwise, if `value` + `installments` (>=2, value > 0) are
+ *      supplied → preview path: returns a hypothetical schedule
+ *      without creating a payment. Lets an agent ask "what would 6x
+ *      on R$4.800 look like?" before committing. If `id` was also
+ *      supplied but did not resolve (1), the preview path still
+ *      runs — graceful degradation rather than failing the call.
+ *   3. Otherwise → single-installment fallback so callers without
+ *      prior state still get a structured response instead of a
+ *      generic placeholder.
+ *
+ * Exported for unit-test access; not part of the MCP wire surface.
+ */
+export function getInstallmentsDemoResponse(args: any): Record<string, unknown> {
+  const id: string | undefined = typeof args?.id === "string" ? args.id : undefined;
+  const previewValue: number | undefined =
+    typeof args?.value === "number" && Number.isFinite(args.value) && args.value > 0
+      ? args.value
+      : undefined;
+  const previewInstallments: number | undefined =
+    typeof args?.installments === "number" && Number.isFinite(args.installments) && args.installments >= 2
+      ? Math.floor(args.installments)
+      : undefined;
+
+  if (id) {
+    const ledger = installmentLedger.get(id);
+    if (ledger) {
+      const installments = Array.from({ length: ledger.installments }, (_, i) => ({
+        number: i + 1,
+        value: ledger.installmentValue,
+        dueDate: ledger.dueDate,
+        status: "PENDING",
+      }));
+      return { id, totalValue: ledger.value, installmentCount: ledger.installments, installments };
+    }
+  }
+
+  if (previewValue !== undefined && previewInstallments !== undefined) {
+    const installmentValue = Math.round((previewValue / previewInstallments) * 100) / 100;
+    const installments = Array.from({ length: previewInstallments }, (_, i) => ({
+      number: i + 1,
+      value: installmentValue,
+      status: "PREVIEW",
+    }));
+    return {
+      preview: true,
+      totalValue: previewValue,
+      installmentCount: previewInstallments,
+      installmentValue,
+      installments,
+    };
+  }
+
+  return {
+    id: id ?? "pay_demo_001",
+    totalValue: 150.00,
+    installmentCount: 1,
+    installments: [{ number: 1, value: 150.00, dueDate: "2026-04-15", status: "PENDING" }],
+  };
+}
 
 const API_KEY = process.env.ASAAS_API_KEY || "";
 const BASE_URL = process.env.ASAAS_SANDBOX === "true"
@@ -100,15 +232,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "create_payment",
-      description: "Create a payment in Asaas (Pix, boleto, or credit card)",
+      description: "Create a payment in Asaas (Pix, boleto, or credit card). Pass `installments` (>=2) with `billingType: CREDIT_CARD` to split the value into equal monthly installments.",
       inputSchema: {
         type: "object",
         properties: {
           customer: { type: "string", description: "Customer ID (cus_xxx)" },
           billingType: { type: "string", enum: ["BOLETO", "CREDIT_CARD", "PIX"], description: "Payment method" },
-          value: { type: "number", description: "Amount in BRL" },
-          dueDate: { type: "string", description: "Due date (YYYY-MM-DD)" },
+          value: { type: "number", description: "Total amount in BRL" },
+          dueDate: { type: "string", description: "Due date of the first installment (YYYY-MM-DD)" },
           description: { type: "string", description: "Payment description" },
+          installments: { type: "number", minimum: 2, description: "Number of equal installments (>=2). Only valid with billingType: CREDIT_CARD." },
         },
         required: ["customer", "billingType", "value", "dueDate"],
       },
@@ -264,13 +397,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "get_installments",
-      description: "Get installment details for a payment",
+      description: "Get installment details. Pass `id` to look up an existing payment's installment schedule, OR pass `value` + `installments` (>=2) to preview a hypothetical schedule without creating a payment. If both are supplied, the `id` look-up runs first; when the id resolves to a recorded schedule it wins, otherwise the preview path is attempted with `value` + `installments`.",
       inputSchema: {
         type: "object",
         properties: {
-          id: { type: "string", description: "Payment ID (pay_xxx)" },
+          id: { type: "string", description: "Payment ID (pay_xxx) — look-up path" },
+          value: { type: "number", description: "Total amount in BRL — preview path" },
+          installments: { type: "number", minimum: 2, description: "Number of equal installments (>=2) — preview path" },
         },
-        required: ["id"],
       },
     },
     {
@@ -411,6 +545,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   if (DEMO_MODE) {
+    if (name === "create_payment") {
+      return { content: [{ type: "text", text: JSON.stringify(createPaymentDemoResponse(args), null, 2) }] };
+    }
+    if (name === "get_installments") {
+      return { content: [{ type: "text", text: JSON.stringify(getInstallmentsDemoResponse(args), null, 2) }] };
+    }
     return { content: [{ type: "text", text: JSON.stringify(DEMO_RESPONSES[name] || { demo: true, tool: name }, null, 2) }] };
   }
 
