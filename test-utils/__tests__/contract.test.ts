@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseToolResult } from "../contract.js";
+import { parseToolResult, uniqueSuffix } from "../contract.js";
 
 describe("parseToolResult", () => {
   it("extracts text and parsed JSON from a success result", () => {
@@ -21,5 +21,20 @@ describe("parseToolResult", () => {
     expect(parsed.isError).toBe(true);
     expect(parsed.text).toContain("404");
     expect(parsed.json).toBeNull();
+  });
+});
+
+describe("uniqueSuffix", () => {
+  it("returns a non-empty lowercase alphanumeric string", () => {
+    const s = uniqueSuffix();
+    expect(typeof s).toBe("string");
+    expect(s.length).toBeGreaterThan(0);
+    expect(s).toMatch(/^[a-z0-9]+$/);
+  });
+
+  it("returns a different value on each call", () => {
+    const a = uniqueSuffix();
+    const b = uniqueSuffix();
+    expect(a).not.toBe(b);
   });
 });

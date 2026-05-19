@@ -43,6 +43,18 @@ export function parseToolResult(result: any): ParsedToolResult {
 }
 
 /**
+ * Short, unique, lowercase-alphanumeric token for building collision-free
+ * test data (emails, external_reference) so reruns never clash on the
+ * provider's duplicate-detection. Not cryptographic — uniqueness only.
+ */
+export function uniqueSuffix(): string {
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 8)
+  );
+}
+
+/**
  * describe block that is skipped unless `envVar` is set, and uses a
  * longer timeout (network calls). Mirrors describe.skipIf semantics.
  */
