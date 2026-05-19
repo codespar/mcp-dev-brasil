@@ -25,6 +25,7 @@
     "audit:catalog:write": "python3 scripts/audit-catalog.py --out docs/catalog-audit.md"
   },
   "devDependencies": {
+    "dotenv": "^16.6.1",
     "vitest": "^3.1.1"
   },
   "license": "MIT",
