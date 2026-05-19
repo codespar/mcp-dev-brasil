@@ -33,6 +33,11 @@ const HINT =
   "Check MP_TEST_ACCESS_TOKEN in .env — it must be a valid sandbox token from the Test credentials section.";
 
 async function call(name: string, args: Record<string, unknown> = {}) {
+  if (!callToolHandler) {
+    throw new Error(
+      "callToolHandler not registered — did beforeAll (vi.resetModules + import ../index.js) complete?",
+    );
+  }
   const result = await callToolHandler({ params: { name, arguments: args } });
   const parsed = parseToolResult(result);
   assertCredentialAccepted(parsed, HINT);
