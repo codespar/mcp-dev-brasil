@@ -60,14 +60,18 @@ export function describeContract(
 
 /**
  * Throws a clear, actionable error when a tool result indicates the
- * credential was rejected (HTTP 401 / unauthorized), so a bad/expired
- * token fails loudly instead of looking like a generic contract break.
+ * credential was rejected (HTTP 401/403 / unauthorized / forbidden), so a
+ * bad/expired token fails loudly instead of looking like a generic contract
+ * break. Pass a provider-specific `hint` to guide the user.
  */
-export function assertCredentialAccepted(parsed: ParsedToolResult): void {
-  if (parsed.isError && /\b401\b|unauthorized|invalid[_ ]?token/i.test(parsed.text)) {
+export function assertCredentialAccepted(
+  parsed: ParsedToolResult,
+  hint?: string,
+): void {
+  if (parsed.isError && /\b40[13]\b|unauthorized|forbidden|invalid[_ ]?token/i.test(parsed.text)) {
     throw new Error(
-      `Mercado Pago rejected the credential (got: ${parsed.text}). ` +
-        `Check MP_TEST_ACCESS_TOKEN in .env — it must be a valid TEST- sandbox token.`,
+      `The provider rejected the credential (got: ${parsed.text}).` +
+        (hint ? ` ${hint}` : ""),
     );
   }
 }

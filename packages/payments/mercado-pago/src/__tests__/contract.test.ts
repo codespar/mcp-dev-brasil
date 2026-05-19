@@ -8,13 +8,11 @@ import {
 
 // --- Capture MCP handlers; do NOT mock fetch (real network) ---
 let callToolHandler: Function;
-let listToolsHandler: Function;
 
 vi.mock("@modelcontextprotocol/sdk/server/index.js", () => {
   class FakeServer {
     constructor() {}
     setRequestHandler(schema: any, handler: Function) {
-      if (JSON.stringify(schema).includes("tools/list")) listToolsHandler = handler;
       if (JSON.stringify(schema).includes("tools/call")) callToolHandler = handler;
     }
     connect() {
@@ -28,13 +26,13 @@ vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
   StdioServerTransport: class {},
 }));
 
+await loadContractEnv();
+
 describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
   beforeAll(async () => {
-    await loadContractEnv();
     process.env.MERCADO_PAGO_ACCESS_TOKEN = process.env.MP_TEST_ACCESS_TOKEN;
     vi.resetModules();
     callToolHandler = undefined as any;
-    listToolsHandler = undefined as any;
     await import("../index.js");
   });
 
@@ -45,7 +43,7 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
         params: { name: "get_payment_methods", arguments: {} },
       });
       const parsed = parseToolResult(result);
-      assertCredentialAccepted(parsed);
+      assertCredentialAccepted(parsed, "Check MP_TEST_ACCESS_TOKEN in .env — it must be a valid TEST- sandbox token.");
       expect(parsed.isError).toBe(false);
       expect(Array.isArray(parsed.json)).toBe(true);
       expect((parsed.json as any[]).length).toBeGreaterThan(0);
@@ -61,7 +59,7 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
         params: { name: "get_payment", arguments: { paymentId: "0" } },
       });
       const parsed = parseToolResult(result);
-      assertCredentialAccepted(parsed);
+      assertCredentialAccepted(parsed, "Check MP_TEST_ACCESS_TOKEN in .env — it must be a valid TEST- sandbox token.");
       expect(parsed.isError).toBe(true);
       expect(parsed.text).toContain("404");
     },
