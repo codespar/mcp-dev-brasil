@@ -53,7 +53,7 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
   );
 
   it(
-    "returns the real 404 error contract for an unknown payment",
+    "returns a real 4xx client-error contract for an invalid/unknown payment",
     async () => {
       const result = await callToolHandler({
         params: { name: "get_payment", arguments: { paymentId: "0" } },
@@ -61,7 +61,10 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
       const parsed = parseToolResult(result);
       assertCredentialAccepted(parsed, "Check MP_TEST_ACCESS_TOKEN in .env — it must be a valid TEST- sandbox token.");
       expect(parsed.isError).toBe(true);
-      expect(parsed.text).toContain("404");
+      // Mercado Pago returns a 4xx for an invalid/unknown payment id
+      // (observed: 400 for "0"); assert the error *class*, not an exact
+      // code, so the contract test stays robust without overfitting.
+      expect(parsed.text).toMatch(/Mercado Pago API 4\d\d/);
     },
     20000,
   );

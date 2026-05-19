@@ -110,8 +110,7 @@ credential env var is set, so `npm test` stays green without credentials.
 
 Run the Mercado Pago contract test locally:
 
-1. Create a Mercado Pago app and copy its **test** Access Token
-   (prefix `TEST-`) from the developer panel.
+1. Create a Mercado Pago app and copy its Access Token from the **Test credentials** section of the developer panel (it may start with `TEST-` or `APP_USR-` — what matters is that it comes from the *Test credentials* section, not Production).
 2. Create `.env` at the repo root (gitignored):
    ```
    MP_TEST_ACCESS_TOKEN=TEST-...
@@ -121,4 +120,4 @@ Run the Mercado Pago contract test locally:
    npx vitest run packages/payments/mercado-pago/src/__tests__/contract.test.ts
    ```
 
-Never commit `.env` or any token. Use only sandbox `TEST-` tokens.
+Never commit `.env` or any token. Use only **sandbox** credentials from the Test credentials section — never Production.
