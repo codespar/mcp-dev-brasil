@@ -44,12 +44,13 @@ async function call(name: string, args: Record<string, unknown> = {}) {
   return parsed;
 }
 
-// sandbox: a seller "Credenciais de teste" Access Token is broadly accepted
-// (17 read/POST tools succeed with it — get_payment_methods, create_preference,
-// create_card_token, etc.). BUT several specific endpoints answer 401/403 as
-// their genuine per-endpoint contract for this account type (not a bad token).
-// `callRaw` skips the global credential guard so those endpoints can be
-// asserted at the row level against the EXACT status class we observed.
+// A seller "Credenciais de teste" Access Token is broadly accepted, including
+// for write flows, AS LONG AS the payer email is a @testuser.com test-buyer
+// email (MP docs: that domain tells MP the purchase is from a test buyer; a
+// synthetic email triggers a test/live mismatch 401). A few endpoints are still
+// genuinely unavailable for this account type and answer 4xx/403 as their real
+// per-endpoint contract — `callRaw` skips the global credential guard so those
+// can be asserted at the row level against the EXACT status class observed.
 async function callRaw(name: string, args: Record<string, unknown> = {}) {
   if (!callToolHandler) {
     throw new Error(
@@ -160,15 +161,25 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
 
   // ---- payment-flow: chained, real side effects in sandbox ----
   const sfx = uniqueSuffix();
-  const payerEmail = `test+${sfx}@codespar.dev`;
+  // Per MP docs the payer email must be a @testuser.com test-buyer email. We
+  // verified BOTH the canonical literal `test@testuser.com` AND a unique
+  // `test_user_<sfx>@testuser.com` against the live sandbox: create_customer
+  // and create_payment STILL return 401 "Unauthorized use of live
+  // credentials" with either form, so the email is NOT the blocker for those
+  // two endpoints — this seller test-credential token genuinely cannot create
+  // customers or charge payments (a real account-type limitation). The
+  // preference/card-token/search flows do succeed with this email.
+  const payerEmail = `test_user_${sfx}@testuser.com`;
   const extRef = `codespar-${sfx}`;
   let preferenceId: string | undefined;
 
-  // sandbox: create_customer with a seller test Access Token →
-  // 401 {"error":"unauthorized","cause":[{"code":"300","description":
-  // "Unauthorized use of live credentials"}]}. Customer creation requires a
-  // test-user token (not the seller "Credenciais de teste" token), so this is
-  // demoted to an error-contract assertion proving the failure is structured.
+  // sandbox: create_customer with the seller test Access Token →
+  // 401 {"message":"access denied","error":"unauthorized","cause":[{"code":
+  // "300","description":"Unauthorized use of live credentials"}]}. Verified
+  // with both `test@testuser.com` and `test_user_<sfx>@testuser.com`: the
+  // @testuser.com payer-email fix does NOT unblock this — customer creation is
+  // a genuine structural limitation of this account type, not an email
+  // mismatch. Documented as a structured error contract.
   it(
     "payment-flow: create_customer is rejected for a seller test token (401)",
     async () => {
@@ -233,12 +244,16 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
     30000,
   );
 
-  // sandbox: create_payment with a seller test Access Token →
-  // 401 "Unauthorized use of live credentials" (payment creation requires a
-  // test-user token). Asserted as a structured failure with an invalid token
-  // so the error contract is exercised independently of the credential issue.
+  // sandbox: create_payment with a valid card token + @testuser.com payer
+  // email STILL → 401 {"message":"Unauthorized use of live credentials",
+  // "error":"unauthorized","cause":[{"code":7,"description":"Unauthorized use
+  // of live credentials"}]}. Verified with both `test@testuser.com` and
+  // `test_user_<sfx>@testuser.com`: the payer-email fix does NOT unblock
+  // charging — this seller test-credential token genuinely cannot create
+  // payments (a real account-type limitation, not an email mismatch).
+  // Documented as a structured error contract.
   it(
-    "payment-flow: create_payment rejects an invalid token with a structured 4xx",
+    "payment-flow: create_payment is rejected for a seller test token (401)",
     async () => {
       const p = await callRaw("create_payment", {
         amount: 10,
@@ -285,12 +300,14 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
   );
 
   // ---- subscription-lifecycle ----
-  // sandbox: create_subscription (POST /preapproval) → 500 {"message":
-  // "Internal server error"} for a seller test Access Token (the preapproval
-  // endpoint cannot be exercised without a test-user / configured plan). It
-  // fundamentally cannot succeed here, so the create step is demoted to a
-  // server-error contract and the dependent round-trip/update/cancel steps
-  // are demoted to invalid-id error contracts.
+  // sandbox: create_subscription (POST /preapproval) with a @testuser.com
+  // payer email → 400 {"message":"Cannot operate between different
+  // countries"}. (With the prior synthetic email it was 401 "Unauthorized use
+  // of live credentials".) The @testuser.com fix moves it past the
+  // credential check but the seller test account has no matching-country test
+  // buyer, so preapproval still cannot succeed — a genuine account limitation,
+  // not the email. Documented as a structured error contract; the dependent
+  // round-trip/update/cancel steps are exercised against an unknown id.
   it(
     "subscription: create_subscription returns a structured error for a seller test token",
     async () => {
@@ -307,8 +324,9 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
         external_reference: extRef,
       });
       expect(p.isError).toBe(true);
-      // observed: 500 Internal server error for a seller test token; accept the
-      // documented 4xx/5xx structured-failure class.
+      // observed: 400 "Cannot operate between different countries" with a
+      // @testuser.com email (401 with a synthetic one); accept the documented
+      // 4xx/5xx structured-failure class.
       expect(p.text).toMatch(/Mercado Pago API [45]\d\d/);
     },
     30000,
