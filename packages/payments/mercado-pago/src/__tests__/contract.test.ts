@@ -44,13 +44,16 @@ async function call(name: string, args: Record<string, unknown> = {}) {
   return parsed;
 }
 
-// A seller "Credenciais de teste" Access Token is broadly accepted, including
-// for write flows, AS LONG AS the payer email is a @testuser.com test-buyer
-// email (MP docs: that domain tells MP the purchase is from a test buyer; a
-// synthetic email triggers a test/live mismatch 401). A few endpoints are still
-// genuinely unavailable for this account type and answer 4xx/403 as their real
-// per-endpoint contract — `callRaw` skips the global credential guard so those
-// can be asserted at the row level against the EXACT status class observed.
+// callRaw() parses a tool result WITHOUT the assertCredentialAccepted
+// guard. Used ONLY for endpoints whose genuine, verified contract for
+// this account's Test-credentials token is a 401/403 (e.g. create_customer,
+// create_payment, create_subscription, create_store, list_stores,
+// get_balance, and unknown-id reads). For these the rejection IS the
+// contract under test, so the guard must not short-circuit it. Endpoints
+// that genuinely accept the credential use call() instead. The payer
+// email being @testuser.com does NOT unblock the 401 endpoints — that
+// was tested against the live sandbox and disproven; see per-test
+// comments for the exact MP status/message.
 async function callRaw(name: string, args: Record<string, unknown> = {}) {
   if (!callToolHandler) {
     throw new Error(
@@ -195,7 +198,7 @@ describeContract("mcp-mercado-pago", "MP_TEST_ACCESS_TOKEN", () => {
   );
 
   it(
-    "payment-flow: list_customers finds the created email",
+    "payment-flow: list_customers returns a real success contract",
     async () => {
       const p = await call("list_customers", { email: payerEmail });
       expect(p.isError).toBe(false);
