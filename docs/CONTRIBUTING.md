@@ -100,3 +100,25 @@ If you want an MCP server for a Brazilian service that doesn't exist yet:
 ## License
 
 All contributions are licensed under MIT.
+
+## Contract tests (real provider sandbox)
+
+Unit tests mock the network. Contract tests hit a provider's **sandbox** to
+prove the integration really works. They live next to unit tests as
+`src/__tests__/contract.test.ts` and are **skipped unless** the required
+credential env var is set, so `npm test` stays green without credentials.
+
+Run the Mercado Pago contract test locally:
+
+1. Create a Mercado Pago app and copy its **test** Access Token
+   (prefix `TEST-`) from the developer panel.
+2. Create `.env` at the repo root (gitignored):
+   ```
+   MP_TEST_ACCESS_TOKEN=TEST-...
+   ```
+3. Run:
+   ```bash
+   npx vitest run packages/payments/mercado-pago/src/__tests__/contract.test.ts
+   ```
+
+Never commit `.env` or any token. Use only sandbox `TEST-` tokens.
